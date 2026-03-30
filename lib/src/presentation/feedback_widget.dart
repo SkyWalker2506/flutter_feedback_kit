@@ -19,6 +19,9 @@ class FeedbackWidget extends StatefulWidget {
     this.categories,
     this.submitLabel = 'Send Feedback',
     this.successMessage = 'Thank you for your feedback!',
+    this.imageQuality = 60,
+    this.maxImageWidth = 800,
+    this.maxImageHeight = 800,
   });
 
   final FeedbackBackend backend;
@@ -29,6 +32,9 @@ class FeedbackWidget extends StatefulWidget {
   final List<FeedbackCategory>? categories;
   final String submitLabel;
   final String successMessage;
+  final int imageQuality;
+  final double maxImageWidth;
+  final double maxImageHeight;
 
   @override
   State<FeedbackWidget> createState() => _FeedbackWidgetState();
@@ -52,7 +58,12 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
   Future<void> _pickScreenshot() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: widget.imageQuality,
+      maxWidth: widget.maxImageWidth,
+      maxHeight: widget.maxImageHeight,
+    );
     if (file == null) return;
 
     final bytes = await file.readAsBytes();
