@@ -192,17 +192,21 @@ class _ScreenshotRow extends StatelessWidget {
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
+                  semanticLabel: 'Screenshot ${i + 1} of ${screenshots.length}',
                 ),
               ),
               Positioned(
                 top: 0,
                 right: 0,
-                child: GestureDetector(
-                  onTap: () => onRemove(i),
-                  child: const CircleAvatar(
-                    radius: 10,
+                child: IconButton(
+                  icon: const Icon(Icons.close, size: 16),
+                  tooltip: 'Remove screenshot ${i + 1}',
+                  onPressed: () => onRemove(i),
+                  style: IconButton.styleFrom(
                     backgroundColor: Colors.red,
-                    child: Icon(Icons.close, size: 12, color: Colors.white),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(28, 28),
+                    padding: EdgeInsets.zero,
                   ),
                 ),
               ),
