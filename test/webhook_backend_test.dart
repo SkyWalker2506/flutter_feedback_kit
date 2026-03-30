@@ -51,10 +51,25 @@ void main() {
     test('throws WebhookException on non-2xx response', () async {
       final backend = WebhookBackend(
         url: 'https://example.com/webhook',
-        httpClient: MockClient((_) async => http.Response('error', 500)),
+        httpClient: MockClient((_) async => http.Response('sensitive body', 500)),
       );
 
-      expect(() => backend.submit(entry), throwsA(isA<WebhookException>()));
+      expect(
+        () => backend.submit(entry),
+        throwsA(
+          predicate<WebhookException>(
+            (e) => !e.message.contains('sensitive body'),
+            'exception must not leak response body',
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError for non-HTTPS URL', () {
+      expect(
+        () => WebhookBackend(url: 'http://example.com/webhook'),
+        throwsA(isA<ArgumentError>()),
+      );
     });
   });
 }

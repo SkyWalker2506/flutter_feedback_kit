@@ -12,7 +12,11 @@ class WebhookBackend implements FeedbackBackend {
     this.payloadBuilder,
     this.timeout = const Duration(seconds: 15),
     http.Client? httpClient,
-  }) : _client = httpClient ?? http.Client();
+  }) : _client = httpClient ?? http.Client() {
+    if (Uri.parse(url).scheme != 'https') {
+      throw ArgumentError.value(url, 'url', 'WebhookBackend requires an HTTPS URL');
+    }
+  }
 
   final String url;
   final Map<String, String> headers;
@@ -34,7 +38,7 @@ class WebhookBackend implements FeedbackBackend {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw WebhookException(
-        'Webhook failed with status ${response.statusCode}: ${response.body}',
+        'Webhook failed with status ${response.statusCode}',
       );
     }
   }
