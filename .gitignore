@@ -1,0 +1,28 @@
+# Claude Code
+.mcp.json
+.claude/settings.local.json
+
+# Environment
+.env
+
+# OS
+.DS_Store
+*.swp
+
+# IDE
+.idea/
+.vscode/
+.cursor/
+
+# Runtime
+*.log
+*.pid
+
+# Flutter / Dart
+.dart_tool/
+build/
+/dist/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+pubspec.lock
