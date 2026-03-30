@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -55,7 +55,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null) return;
 
-    final bytes = await File(file.path).readAsBytes();
+    final bytes = await file.readAsBytes();
     setState(() {
       _screenshots.add(base64Encode(bytes));
     });
@@ -69,7 +69,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     final entry = FeedbackEntry(
       category: _selectedCategory,
       message: _messageController.text.trim(),
-      platform: Platform.operatingSystem,
+      platform: defaultTargetPlatform.name.toLowerCase(),
       appVersion: widget.appVersion,
       createdAt: DateTime.now(),
       screenshots: List.unmodifiable(_screenshots),
