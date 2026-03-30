@@ -43,6 +43,9 @@ class WebhookBackend implements FeedbackBackend {
     }
   }
 
+  @override
+  void dispose() => _client.close();
+
   Map<String, dynamic> _defaultPayload(FeedbackEntry entry) => {
         'category': entry.category.label,
         'message': entry.message,

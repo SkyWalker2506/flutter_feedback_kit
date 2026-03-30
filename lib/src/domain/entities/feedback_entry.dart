@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'feedback_category.dart';
 
 class FeedbackEntry {
@@ -52,7 +54,8 @@ class FeedbackEntry {
           message == other.message &&
           platform == other.platform &&
           appVersion == other.appVersion &&
-          createdAt == other.createdAt;
+          createdAt == other.createdAt &&
+          listEquals(screenshots, other.screenshots);
 
   @override
   int get hashCode => Object.hash(
@@ -61,5 +64,6 @@ class FeedbackEntry {
         platform,
         appVersion,
         createdAt,
+        Object.hashAll(screenshots),
       );
 }
