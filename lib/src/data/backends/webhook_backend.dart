@@ -1,0 +1,58 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../../domain/entities/feedback_entry.dart';
+import '../../domain/repositories/feedback_backend.dart';
+
+class WebhookBackend implements FeedbackBackend {
+  WebhookBackend({
+    required this.url,
+    this.headers = const {},
+    this.payloadBuilder,
+    this.timeout = const Duration(seconds: 15),
+    http.Client? httpClient,
+  }) : _client = httpClient ?? http.Client();
+
+  final String url;
+  final Map<String, String> headers;
+  final Map<String, dynamic> Function(FeedbackEntry)? payloadBuilder;
+  final Duration timeout;
+  final http.Client _client;
+
+  @override
+  Future<void> submit(FeedbackEntry entry) async {
+    final payload = payloadBuilder?.call(entry) ?? _defaultPayload(entry);
+
+    final response = await _client
+        .post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json', ...headers},
+          body: jsonEncode(payload),
+        )
+        .timeout(timeout);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw WebhookException(
+        'Webhook failed with status ${response.statusCode}: ${response.body}',
+      );
+    }
+  }
+
+  Map<String, dynamic> _defaultPayload(FeedbackEntry entry) => {
+        'category': entry.category.label,
+        'message': entry.message,
+        'platform': entry.platform,
+        'appVersion': entry.appVersion,
+        'createdAt': entry.createdAt.toIso8601String(),
+        'screenshots': entry.screenshots,
+      };
+}
+
+class WebhookException implements Exception {
+  const WebhookException(this.message);
+  final String message;
+
+  @override
+  String toString() => 'WebhookException: $message';
+}

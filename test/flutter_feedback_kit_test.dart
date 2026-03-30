@@ -1,12 +1,15 @@
+import 'package:flutter_feedback_kit/flutter_feedback_kit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_feedback_kit/flutter_feedback_kit.dart';
-
 void main() {
-  test('adds one to input values', () {
-    final calculator = Calculator();
-    expect(calculator.addOne(2), 3);
-    expect(calculator.addOne(-7), -6);
-    expect(calculator.addOne(0), 1);
+  test('package exports are accessible', () {
+    final entry = FeedbackEntry(
+      category: FeedbackCategory.bug,
+      message: 'test',
+      platform: 'android',
+      appVersion: '1.0.0',
+      createdAt: DateTime(2026),
+    );
+    expect(entry.category, FeedbackCategory.bug);
   });
 }

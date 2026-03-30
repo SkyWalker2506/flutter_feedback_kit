@@ -1,39 +1,80 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# flutter_feedback_kit
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A Flutter package for collecting in-app user feedback with a customizable widget and pluggable backends.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Drop-in `FeedbackButton` (floating action button) and `FeedbackWidget` (form)
+- Category selection (Bug, Suggestion, UI/UX, Performance, Other)
+- Optional screenshot attachment (up to 3 images)
+- Pluggable `FeedbackBackend` interface — bring your own backend
+- Built-in `WebhookBackend` for Slack, Discord, or any HTTP endpoint
 
-## Getting started
+## Installation
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+```yaml
+dependencies:
+  flutter_feedback_kit: ^0.1.0
+```
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+### 1. Add a FeedbackButton to your Scaffold
 
 ```dart
-const like = 'sample';
+import 'package:flutter_feedback_kit/flutter_feedback_kit.dart';
+
+Scaffold(
+  floatingActionButton: FeedbackButton(
+    backend: WebhookBackend(url: 'https://your-webhook-url.com/feedback'),
+    appVersion: '1.0.0',
+    onSuccess: () => print('Sent!'),
+    onError: (e) => print('Error: $e'),
+  ),
+);
 ```
 
-## Additional information
+### 2. Embed FeedbackWidget directly
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+```dart
+FeedbackWidget(
+  backend: WebhookBackend(url: 'https://your-webhook-url.com/feedback'),
+  appVersion: '1.0.0',
+  onSuccess: () => Navigator.pop(context),
+)
+```
+
+### 3. Custom backend
+
+```dart
+class FirebaseBackend implements FeedbackBackend {
+  @override
+  Future<void> submit(FeedbackEntry entry) async {
+    await FirebaseFirestore.instance
+        .collection('feedback')
+        .add(entry.toJson());
+  }
+}
+```
+
+### 4. Custom webhook payload (e.g. Slack)
+
+```dart
+WebhookBackend(
+  url: 'https://hooks.slack.com/services/...',
+  payloadBuilder: (entry) => {
+    'text': '*${entry.category.label}*: ${entry.message}',
+  },
+)
+```
+
+## FeedbackEntry fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `category` | `FeedbackCategory` | Bug, Suggestion, UI/UX, Performance, Other |
+| `message` | `String` | User message (max 2000 chars) |
+| `platform` | `String` | `android` / `ios` |
+| `appVersion` | `String` | App version string |
+| `createdAt` | `DateTime` | Submission timestamp |
+| `screenshots` | `List<String>` | Base64-encoded images |
