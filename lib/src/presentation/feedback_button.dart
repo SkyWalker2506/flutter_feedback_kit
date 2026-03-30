@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../domain/entities/feedback_category.dart';
 import '../domain/repositories/feedback_backend.dart';
 import 'feedback_widget.dart';
 
@@ -11,6 +12,13 @@ class FeedbackButton extends StatelessWidget {
     this.child,
     this.onSuccess,
     this.onError,
+    this.categories,
+    this.maxMessageLength = 2000,
+    this.submitLabel = 'Send Feedback',
+    this.successMessage = 'Thank you for your feedback!',
+    this.imageQuality = 60,
+    this.maxImageWidth = 800,
+    this.maxImageHeight = 800,
   });
 
   final FeedbackBackend backend;
@@ -18,6 +26,13 @@ class FeedbackButton extends StatelessWidget {
   final Widget? child;
   final VoidCallback? onSuccess;
   final void Function(Object)? onError;
+  final List<FeedbackCategory>? categories;
+  final int maxMessageLength;
+  final String submitLabel;
+  final String successMessage;
+  final int imageQuality;
+  final double maxImageWidth;
+  final double maxImageHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +58,13 @@ class FeedbackButton extends StatelessWidget {
               onSuccess?.call();
             },
             onError: onError,
+            categories: categories,
+            maxMessageLength: maxMessageLength,
+            submitLabel: submitLabel,
+            successMessage: successMessage,
+            imageQuality: imageQuality,
+            maxImageWidth: maxImageWidth,
+            maxImageHeight: maxImageHeight,
           ),
         ),
       ),

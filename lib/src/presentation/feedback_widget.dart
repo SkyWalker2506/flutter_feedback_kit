@@ -67,8 +67,10 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     if (file == null) return;
 
     final bytes = await file.readAsBytes();
+    final encoded = await compute(base64Encode, bytes);
+    if (!mounted) return;
     setState(() {
-      _screenshots.add(base64Encode(bytes));
+      _screenshots.add(encoded);
     });
   }
 
@@ -101,7 +103,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send feedback: $e'),
+            content: const Text('Failed to send feedback. Please try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -152,10 +154,13 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: Semantics(
+                      label: 'Sending feedback, please wait',
+                      child: const CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   )
                 : Text(widget.submitLabel),
           ),
