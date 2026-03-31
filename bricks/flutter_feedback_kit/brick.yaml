@@ -1,0 +1,26 @@
+name: flutter_feedback_kit
+description: Quick setup for flutter_feedback_kit — adds FeedbackButton with chosen backend
+version: 0.1.0
+environment:
+  mason: ">=0.1.0-dev.52 <0.1.0"
+vars:
+  backend:
+    type: enum
+    default: webhook
+    values:
+      - webhook
+      - firebase
+      - linear
+    prompt: "Which backend do you want to use?"
+  webhook_url:
+    type: string
+    default: "https://example.com/feedback"
+    prompt: "Webhook URL (only used when backend is webhook)"
+  app_version:
+    type: string
+    default: "1.0.0"
+    prompt: "App version string (e.g. 1.0.0)"
+  use_ai_categorization:
+    type: boolean
+    default: false
+    prompt: "Enable AI categorization middleware (requires Anthropic API key)?"
