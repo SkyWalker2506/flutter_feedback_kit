@@ -35,3 +35,57 @@ jobs:
       - name: Analyze firebase sub-package
         working-directory: packages/flutter_feedback_kit_firebase
         run: flutter analyze
+
+  analyze-jira:
+    name: Analyze (flutter_feedback_kit_jira)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Get root package dependencies
+        run: flutter pub get
+      - name: Get jira sub-package dependencies
+        working-directory: packages/flutter_feedback_kit_jira
+        run: flutter pub get
+      - name: Analyze jira sub-package
+        working-directory: packages/flutter_feedback_kit_jira
+        run: flutter analyze
+
+  analyze-sentry:
+    name: Analyze (flutter_feedback_kit_sentry)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Get root package dependencies
+        run: flutter pub get
+      - name: Get sentry sub-package dependencies
+        working-directory: packages/flutter_feedback_kit_sentry
+        run: flutter pub get
+      - name: Analyze sentry sub-package
+        working-directory: packages/flutter_feedback_kit_sentry
+        run: flutter analyze
+
+  analyze-linear:
+    name: Analyze & Test (flutter_feedback_kit_linear)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Get root package dependencies
+        run: flutter pub get
+      - name: Get linear sub-package dependencies
+        working-directory: packages/flutter_feedback_kit_linear
+        run: flutter pub get
+      - name: Analyze linear sub-package
+        working-directory: packages/flutter_feedback_kit_linear
+        run: flutter analyze
+      - name: Test linear sub-package
+        working-directory: packages/flutter_feedback_kit_linear
+        run: flutter test
