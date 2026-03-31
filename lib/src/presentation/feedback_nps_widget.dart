@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../i18n/feedback_localizations.dart';
 
 /// A Net Promoter Score (NPS) widget with a 0–10 scale.
 ///
@@ -49,6 +50,7 @@ class _FeedbackNpsWidgetState extends State<FeedbackNpsWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = FeedbackLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -99,12 +101,12 @@ class _FeedbackNpsWidgetState extends State<FeedbackNpsWidget> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Not likely',
+            Text(l10n.npsNotLikely,
                 style: Theme.of(context)
                     .textTheme
                     .labelSmall
                     ?.copyWith(color: Colors.red.shade400)),
-            Text('Very likely',
+            Text(l10n.npsVeryLikely,
                 style: Theme.of(context)
                     .textTheme
                     .labelSmall

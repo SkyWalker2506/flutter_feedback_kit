@@ -97,7 +97,7 @@ class LinearFeedbackBackend implements FeedbackBackend {
 
     if (response.statusCode != 200) {
       throw LinearBackendException(
-        'Linear API returned HTTP ${response.statusCode}: ${response.body}',
+        'Linear API returned HTTP ${response.statusCode}',
       );
     }
 
@@ -118,7 +118,7 @@ class LinearFeedbackBackend implements FeedbackBackend {
 
     if (!success) {
       throw LinearBackendException(
-        'Linear issueCreate returned success=false. Response: ${response.body}',
+        'Linear issueCreate returned success=false',
       );
     }
   }

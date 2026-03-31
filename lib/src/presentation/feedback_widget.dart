@@ -395,7 +395,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to send feedback. Please try again.'),
+            content: Text(_l10n.feedbackSendError),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -525,6 +525,7 @@ class _ScreenshotRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = FeedbackLocalizations.of(context);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -548,7 +549,7 @@ class _ScreenshotRow extends StatelessWidget {
                 right: 0,
                 child: IconButton(
                   icon: const Icon(Icons.close, size: 16),
-                  tooltip: 'Remove screenshot ${i + 1}',
+                  tooltip: '${l10n.removeScreenshot} ${i + 1}',
                   onPressed: () => onRemove(i),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.red,

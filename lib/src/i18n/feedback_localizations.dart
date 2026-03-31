@@ -45,6 +45,10 @@ abstract class FeedbackLocalizations {
   String get annotationSaveLabel;
   String get annotationDiscardLabel;
   String get annotationUndoTooltip;
+  String get feedbackSendError;
+  String get removeScreenshot;
+  String get npsNotLikely;
+  String get npsVeryLikely;
 }
 
 // ─── English ──────────────────────────────────────────────────────────────────
@@ -74,6 +78,11 @@ class EnFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => 'Save';
   @override String get annotationDiscardLabel => 'Discard';
   @override String get annotationUndoTooltip => 'Undo';
+  @override String get feedbackSendError =>
+      'Failed to send feedback. Please try again.';
+  @override String get removeScreenshot => 'Remove screenshot';
+  @override String get npsNotLikely => 'Not likely';
+  @override String get npsVeryLikely => 'Very likely';
 }
 
 // ─── Turkish ──────────────────────────────────────────────────────────────────
@@ -103,6 +112,11 @@ class TrFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => 'Kaydet';
   @override String get annotationDiscardLabel => 'Vazgeç';
   @override String get annotationUndoTooltip => 'Geri al';
+  @override String get feedbackSendError =>
+      'Geri bildirim gönderilemedi. Lütfen tekrar deneyin.';
+  @override String get removeScreenshot => 'Ekran görüntüsünü kaldır';
+  @override String get npsNotLikely => 'Pek olası değil';
+  @override String get npsVeryLikely => 'Çok olası';
 }
 
 // ─── German ───────────────────────────────────────────────────────────────────
@@ -132,6 +146,11 @@ class DeFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => 'Speichern';
   @override String get annotationDiscardLabel => 'Verwerfen';
   @override String get annotationUndoTooltip => 'Rückgängig';
+  @override String get feedbackSendError =>
+      'Feedback konnte nicht gesendet werden. Bitte versuchen Sie es erneut.';
+  @override String get removeScreenshot => 'Screenshot entfernen';
+  @override String get npsNotLikely => 'Unwahrscheinlich';
+  @override String get npsVeryLikely => 'Sehr wahrscheinlich';
 }
 
 // ─── French ───────────────────────────────────────────────────────────────────
@@ -161,6 +180,11 @@ class FrFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => 'Enregistrer';
   @override String get annotationDiscardLabel => 'Annuler';
   @override String get annotationUndoTooltip => 'Annuler';
+  @override String get feedbackSendError =>
+      'Échec de l\'envoi du retour. Veuillez réessayer.';
+  @override String get removeScreenshot => 'Supprimer la capture';
+  @override String get npsNotLikely => 'Peu probable';
+  @override String get npsVeryLikely => 'Très probable';
 }
 
 // ─── Spanish ──────────────────────────────────────────────────────────────────
@@ -190,6 +214,11 @@ class EsFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => 'Guardar';
   @override String get annotationDiscardLabel => 'Descartar';
   @override String get annotationUndoTooltip => 'Deshacer';
+  @override String get feedbackSendError =>
+      'Error al enviar la opinión. Por favor, inténtalo de nuevo.';
+  @override String get removeScreenshot => 'Eliminar captura';
+  @override String get npsNotLikely => 'Poco probable';
+  @override String get npsVeryLikely => 'Muy probable';
 }
 
 // ─── Arabic ───────────────────────────────────────────────────────────────────
@@ -219,6 +248,11 @@ class ArFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => 'حفظ';
   @override String get annotationDiscardLabel => 'تجاهل';
   @override String get annotationUndoTooltip => 'تراجع';
+  @override String get feedbackSendError =>
+      'فشل إرسال الملاحظات. يرجى المحاولة مرة أخرى.';
+  @override String get removeScreenshot => 'إزالة لقطة الشاشة';
+  @override String get npsNotLikely => 'غير محتمل';
+  @override String get npsVeryLikely => 'محتمل جداً';
 }
 
 // ─── Japanese ─────────────────────────────────────────────────────────────────
@@ -248,6 +282,11 @@ class JaFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => '保存';
   @override String get annotationDiscardLabel => '破棄';
   @override String get annotationUndoTooltip => '元に戻す';
+  @override String get feedbackSendError =>
+      'フィードバックの送信に失敗しました。もう一度お試しください。';
+  @override String get removeScreenshot => 'スクリーンショットを削除';
+  @override String get npsNotLikely => '可能性が低い';
+  @override String get npsVeryLikely => '非常に可能性が高い';
 }
 
 // ─── Chinese (Simplified) ─────────────────────────────────────────────────────
@@ -275,6 +314,10 @@ class ZhFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationSaveLabel => '保存';
   @override String get annotationDiscardLabel => '丢弃';
   @override String get annotationUndoTooltip => '撤销';
+  @override String get feedbackSendError => '发送反馈失败，请重试。';
+  @override String get removeScreenshot => '删除截图';
+  @override String get npsNotLikely => '不太可能';
+  @override String get npsVeryLikely => '非常可能';
 }
 
 // ─── Delegate ─────────────────────────────────────────────────────────────────
