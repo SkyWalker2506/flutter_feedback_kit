@@ -138,6 +138,107 @@ void main() {
     });
   });
 
+  group('FeedbackWidget custom categories', () {
+    testWidgets('shows custom categories in dropdown', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: FeedbackWidget(
+                backend: backend,
+                appVersion: '1.0.0',
+                categories: const [
+                  FeedbackCategoryItem(id: 'billing', label: 'Billing'),
+                  FeedbackCategoryItem(id: 'shipping', label: 'Shipping'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Open dropdown
+      await tester.tap(find.text('Billing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Shipping'), findsOneWidget);
+    });
+
+    testWidgets('submits with custom category id', (tester) async {
+      when(() => backend.submit(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: FeedbackWidget(
+                backend: backend,
+                appVersion: '1.0.0',
+                categories: const [
+                  FeedbackCategoryItem(id: 'billing', label: 'Billing'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextFormField), 'Wrong charge');
+      await tester.tap(find.text('Send Feedback'));
+      await tester.pumpAndSettle();
+
+      final captured =
+          verify(() => backend.submit(captureAny())).captured.first
+              as FeedbackEntry;
+      expect(captured.category, 'billing');
+    });
+  });
+
+  group('FeedbackWidget optional sections', () {
+    testWidgets('does not show rating row by default', (tester) async {
+      await tester.pumpWidget(buildWidget());
+      expect(find.byType(FeedbackRatingWidget), findsNothing);
+    });
+
+    testWidgets('shows rating row when showRating is true', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: FeedbackWidget(
+                backend: backend,
+                appVersion: '1.0.0',
+                showRating: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(FeedbackRatingWidget), findsOneWidget);
+    });
+
+    testWidgets('does not show NPS row by default', (tester) async {
+      await tester.pumpWidget(buildWidget());
+      expect(find.byType(FeedbackNpsWidget), findsNothing);
+    });
+
+    testWidgets('shows NPS row when showNps is true', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: FeedbackWidget(
+                backend: backend,
+                appVersion: '1.0.0',
+                showNps: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(FeedbackNpsWidget), findsOneWidget);
+    });
+  });
+
   group('FeedbackButton', () {
     testWidgets('renders as FloatingActionButton.extended', (tester) async {
       await tester.pumpWidget(

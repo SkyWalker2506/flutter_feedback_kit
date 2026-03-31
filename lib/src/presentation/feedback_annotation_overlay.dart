@@ -11,8 +11,8 @@ import 'package:flutter/rendering.dart';
 /// to a PNG [Uint8List] and calls [onSave]. Tapping **Discard** calls
 /// [onDiscard] without saving.
 ///
-/// Typically triggered from [FeedbackWidget] via [onCaptureScreenshot] or
-/// shown after the user picks an image from the gallery.
+/// Typically triggered from [FeedbackWidget] after a screenshot is captured or
+/// after the user picks an image from the gallery.
 ///
 /// ```dart
 /// Navigator.push(

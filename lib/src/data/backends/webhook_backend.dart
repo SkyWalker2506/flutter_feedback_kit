@@ -14,7 +14,7 @@ import '../../domain/repositories/feedback_backend.dart';
 /// final backend = WebhookBackend(
 ///   url: 'https://hooks.slack.com/services/...',
 ///   payloadBuilder: (entry) => {
-///     'text': '*${entry.category.label}* — ${entry.message}',
+///     'text': '*${entry.category}* — ${entry.message}',
 ///   },
 /// );
 /// ```
@@ -76,7 +76,7 @@ class WebhookBackend implements FeedbackBackend {
   void dispose() => _client.close();
 
   Map<String, dynamic> _defaultPayload(FeedbackEntry entry) => {
-        'category': entry.category.label,
+        'category': entry.category,
         'message': entry.message,
         'platform': entry.platform,
         'appVersion': entry.appVersion,

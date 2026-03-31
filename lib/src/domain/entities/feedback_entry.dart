@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'feedback_category.dart';
 import 'feedback_metadata.dart';
 import 'feedback_session_context.dart';
 
@@ -29,10 +28,7 @@ class FeedbackEntry {
   /// Deserialises from a JSON map previously produced by [toJson].
   factory FeedbackEntry.fromJson(Map<String, dynamic> json) {
     return FeedbackEntry(
-      category: FeedbackCategory.values.firstWhere(
-        (c) => c.name == json['category'],
-        orElse: () => FeedbackCategory.other,
-      ),
+      category: (json['category'] as String?) ?? 'other',
       message: (json['message'] as String?) ?? '',
       platform: (json['platform'] as String?) ?? '',
       appVersion: (json['appVersion'] as String?) ?? '',
@@ -54,8 +50,12 @@ class FeedbackEntry {
     );
   }
 
-  /// The category selected by the user.
-  final FeedbackCategory category;
+  /// The category id selected by the user.
+  ///
+  /// For built-in categories this matches one of the [FeedbackCategory]
+  /// constants (e.g. `'bug'`, `'suggestion'`). Custom categories use whatever
+  /// [FeedbackCategoryItem.id] the caller supplied.
+  final String category;
 
   /// The free-text message entered by the user (max 2 000 characters).
   final String message;
@@ -86,7 +86,7 @@ class FeedbackEntry {
 
   /// Returns a copy with the specified fields replaced.
   FeedbackEntry copyWith({
-    FeedbackCategory? category,
+    String? category,
     String? message,
     String? platform,
     String? appVersion,
@@ -113,7 +113,7 @@ class FeedbackEntry {
 
   /// Serialises this entry to a JSON-compatible map.
   Map<String, dynamic> toJson() => {
-        'category': category.name,
+        'category': category,
         'message': message,
         'platform': platform,
         'appVersion': appVersion,

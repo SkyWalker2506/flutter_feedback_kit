@@ -35,8 +35,9 @@ class FeedbackThemeData {
 
   /// Padding applied around the form content.
   ///
-  /// [FeedbackButton] automatically adds [MediaQuery.viewInsets.bottom] to
-  /// the bottom inset so the form remains visible above the keyboard.
+  /// [FeedbackButton] automatically adds the keyboard inset
+  /// (`MediaQuery.of(context).viewInsets.bottom`) to the bottom padding so
+  /// the form remains visible above the keyboard.
   ///
   /// Default: `EdgeInsets.all(16)`.
   final EdgeInsets contentPadding;

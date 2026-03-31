@@ -72,7 +72,7 @@ class FeedbackButton extends StatelessWidget {
   /// Called when the entry is saved offline instead of sent.
   final VoidCallback? onQueued;
 
-  final List<FeedbackCategory>? categories;
+  final List<FeedbackCategoryItem>? categories;
   final int maxMessageLength;
   final int maxScreenshots;
 

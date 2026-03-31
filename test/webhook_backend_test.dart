@@ -29,7 +29,7 @@ void main() {
       expect(captured?.method, 'POST');
       expect(captured?.url.toString(), 'https://example.com/webhook');
       expect(captured?.headers['Content-Type'], contains('application/json'));
-      expect(captured?.body, contains('"category":"Bug"'));
+      expect(captured?.body, contains('"category":"bug"'));
     });
 
     test('submit uses custom payloadBuilder', () async {

@@ -2,16 +2,30 @@ import 'package:flutter_feedback_kit/flutter_feedback_kit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('FeedbackCategory', () {
-    test('label returns correct string for all 8 categories', () {
-      expect(FeedbackCategory.bug.label, 'Bug');
-      expect(FeedbackCategory.suggestion.label, 'Suggestion');
-      expect(FeedbackCategory.ui.label, 'UI/UX');
-      expect(FeedbackCategory.performance.label, 'Performance');
-      expect(FeedbackCategory.translation.label, 'Translation');
-      expect(FeedbackCategory.featureRequest.label, 'Feature Request');
-      expect(FeedbackCategory.accessibility.label, 'Accessibility');
-      expect(FeedbackCategory.other.label, 'Other');
+  group('FeedbackCategoryItem', () {
+    test('builtIns contains 8 items with correct labels', () {
+      final items = FeedbackCategoryItem.builtIns;
+      expect(items.length, 8);
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.bug).label, 'Bug');
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.suggestion).label, 'Suggestion');
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.ui).label, 'UI/UX');
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.performance).label, 'Performance');
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.translation).label, 'Translation');
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.featureRequest).label, 'Feature Request');
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.accessibility).label, 'Accessibility');
+      expect(items.firstWhere((c) => c.id == FeedbackCategory.other).label, 'Other');
+    });
+
+    test('custom category has correct id and label', () {
+      const custom = FeedbackCategoryItem(id: 'billing', label: 'Billing Issue');
+      expect(custom.id, 'billing');
+      expect(custom.label, 'Billing Issue');
+    });
+
+    test('equality is value-based', () {
+      const a = FeedbackCategoryItem(id: 'bug', label: 'Bug');
+      const b = FeedbackCategoryItem(id: 'bug', label: 'Bug');
+      expect(a, equals(b));
     });
   });
 
@@ -61,10 +75,23 @@ void main() {
       expect(decoded, equals(entry));
     });
 
-    test('fromJson uses other category for unknown value', () {
+    test('fromJson uses "other" for unknown category value', () {
       final json = entry.toJson()..['category'] = 'unknown_value';
       final restored = FeedbackEntry.fromJson(json);
-      expect(restored.category, FeedbackCategory.other);
+      // Unknown values are stored as-is (not mapped to built-in)
+      expect(restored.category, 'unknown_value');
+    });
+
+    test('custom category id is preserved in round-trip', () {
+      final custom = FeedbackEntry(
+        category: 'billing',
+        message: 'Charge issue',
+        platform: 'ios',
+        appVersion: '2.0.0',
+        createdAt: DateTime(2026, 4, 1),
+      );
+      final decoded = FeedbackEntry.decode(custom.encode());
+      expect(decoded.category, 'billing');
     });
 
     test('screenshots are included in equality check', () {

@@ -31,7 +31,7 @@ class LocalFeedbackBackend implements FeedbackBackend {
         .toIso8601String()
         .replaceAll(':', '-')
         .replaceAll('.', '-');
-    final id = '${ts}_${entry.category.name}';
+    final id = '${ts}_${entry.category}';
 
     // Save each screenshot as a PNG file
     final screenshotFileNames = <String>[];
@@ -44,7 +44,7 @@ class LocalFeedbackBackend implements FeedbackBackend {
 
     // Save JSON (filenames, not base64 blobs)
     final json = <String, dynamic>{
-      'category': entry.category.name,
+      'category': entry.category,
       'message': entry.message,
       'platform': entry.platform,
       'appVersion': entry.appVersion,
@@ -56,7 +56,7 @@ class LocalFeedbackBackend implements FeedbackBackend {
 
     debugPrint(
       '[FeedbackKit] 📋 $id.json | '
-      '${entry.category.label} | '
+      '${entry.category} | '
       '${entry.screenshots.length} screenshot(s)',
     );
   }

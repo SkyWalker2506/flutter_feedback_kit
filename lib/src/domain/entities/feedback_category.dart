@@ -1,38 +1,62 @@
-/// Categorises a piece of user feedback.
-enum FeedbackCategory {
-  /// A defect or crash report.
-  bug,
+/// Represents a single selectable category in the feedback form.
+///
+/// Use [FeedbackCategoryItem.builtIns] for the default set, or create custom
+/// items to replace or extend the built-in list:
+///
+/// ```dart
+/// FeedbackWidget(
+///   backend: myBackend,
+///   appVersion: '1.0.0',
+///   categories: [
+///     ...FeedbackCategoryItem.builtIns,
+///     const FeedbackCategoryItem(id: 'billing', label: 'Billing Issue'),
+///   ],
+/// )
+/// ```
+class FeedbackCategoryItem {
+  const FeedbackCategoryItem({required this.id, required this.label});
 
-  /// A general improvement idea from the user.
-  suggestion,
+  /// Unique identifier stored in [FeedbackEntry.category].
+  final String id;
 
-  /// A comment about the app's visual design or user experience.
-  ui,
+  /// Human-readable label shown in the category dropdown.
+  final String label;
 
-  /// A note about perceived slowness or high resource usage.
-  performance,
+  /// The default built-in category list.
+  static const List<FeedbackCategoryItem> builtIns = [
+    FeedbackCategoryItem(id: 'bug', label: 'Bug'),
+    FeedbackCategoryItem(id: 'suggestion', label: 'Suggestion'),
+    FeedbackCategoryItem(id: 'ui', label: 'UI/UX'),
+    FeedbackCategoryItem(id: 'performance', label: 'Performance'),
+    FeedbackCategoryItem(id: 'translation', label: 'Translation'),
+    FeedbackCategoryItem(id: 'featureRequest', label: 'Feature Request'),
+    FeedbackCategoryItem(id: 'accessibility', label: 'Accessibility'),
+    FeedbackCategoryItem(id: 'other', label: 'Other'),
+  ];
 
-  /// An issue with incorrect or missing translation / localisation.
-  translation,
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FeedbackCategoryItem && id == other.id && label == other.label;
 
-  /// A request for a wholly new feature or capability.
-  featureRequest,
+  @override
+  int get hashCode => Object.hash(id, label);
 
-  /// A report of an accessibility barrier.
-  accessibility,
+  @override
+  String toString() => 'FeedbackCategoryItem(id: $id, label: $label)';
+}
 
-  /// Anything that does not fit the other categories.
-  other;
-
-  /// Human-readable label shown in the category picker.
-  String get label => switch (this) {
-        FeedbackCategory.bug => 'Bug',
-        FeedbackCategory.suggestion => 'Suggestion',
-        FeedbackCategory.ui => 'UI/UX',
-        FeedbackCategory.performance => 'Performance',
-        FeedbackCategory.translation => 'Translation',
-        FeedbackCategory.featureRequest => 'Feature Request',
-        FeedbackCategory.accessibility => 'Accessibility',
-        FeedbackCategory.other => 'Other',
-      };
+/// Built-in category identifiers for easy reference.
+///
+/// These string constants match the [FeedbackCategoryItem.id] values in
+/// [FeedbackCategoryItem.builtIns] and the `category` field in stored JSON.
+abstract final class FeedbackCategory {
+  static const String bug = 'bug';
+  static const String suggestion = 'suggestion';
+  static const String ui = 'ui';
+  static const String performance = 'performance';
+  static const String translation = 'translation';
+  static const String featureRequest = 'featureRequest';
+  static const String accessibility = 'accessibility';
+  static const String other = 'other';
 }

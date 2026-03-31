@@ -85,8 +85,18 @@ class FeedbackWidget extends StatefulWidget {
   /// Maximum screenshots that can be attached. Default: 5.
   final int maxScreenshots;
 
-  /// Categories shown in the dropdown. Defaults to all [FeedbackCategory] values.
-  final List<FeedbackCategory>? categories;
+  /// Categories shown in the dropdown.
+  ///
+  /// Defaults to [FeedbackCategoryItem.builtIns]. Pass a custom list to
+  /// restrict, reorder, or extend the built-in set:
+  ///
+  /// ```dart
+  /// categories: [
+  ///   ...FeedbackCategoryItem.builtIns,
+  ///   const FeedbackCategoryItem(id: 'billing', label: 'Billing'),
+  /// ]
+  /// ```
+  final List<FeedbackCategoryItem>? categories;
 
   /// Custom submit button label. Overrides [FeedbackLocalizations.submitLabel].
   final String? submitLabel;
@@ -148,7 +158,7 @@ class FeedbackWidget extends StatefulWidget {
 class _FeedbackWidgetState extends State<FeedbackWidget> {
   final _formKey = GlobalKey<FormState>();
   final _messageController = TextEditingController();
-  FeedbackCategory _selectedCategory = FeedbackCategory.bug;
+  late FeedbackCategoryItem _selectedCategory;
   final List<String> _screenshots = [];
   bool _isSubmitting = false;
   bool _isListening = false;
@@ -156,8 +166,8 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   int? _npsScore;
   bool _submitted = false;
 
-  List<FeedbackCategory> get _categories =>
-      widget.categories ?? FeedbackCategory.values;
+  List<FeedbackCategoryItem> get _categories =>
+      widget.categories ?? FeedbackCategoryItem.builtIns;
 
   bool get _canAddScreenshot => _screenshots.length < widget.maxScreenshots;
 
@@ -168,6 +178,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   @override
   void initState() {
     super.initState();
+    _selectedCategory = _categories.first;
     widget.analytics?.onFeedbackShown();
     if (widget.autoCapture && widget.onCaptureScreenshot != null) {
       WidgetsBinding.instance
@@ -299,7 +310,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     final sessionContext = widget.sessionContextBuilder?.call();
 
     final entry = FeedbackEntry(
-      category: _selectedCategory,
+      category: _selectedCategory.id,
       message: _sanitize(_messageController.text),
       platform: defaultTargetPlatform.name.toLowerCase(),
       appVersion: widget.appVersion,
@@ -396,7 +407,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             ),
             const SizedBox(height: 16),
           ],
-          DropdownButtonFormField<FeedbackCategory>(
+          DropdownButtonFormField<FeedbackCategoryItem>(
             initialValue: _selectedCategory,
             decoration: InputDecoration(labelText: l10n.categoryLabel),
             items: _categories
