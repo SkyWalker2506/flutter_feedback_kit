@@ -8,6 +8,7 @@ import '../domain/entities/feedback_category.dart';
 import '../domain/entities/feedback_entry.dart';
 import '../domain/repositories/feedback_analytics.dart';
 import '../domain/repositories/feedback_backend.dart';
+import '../domain/feedback_middleware.dart';
 import '../domain/entities/feedback_session_context.dart';
 import '../i18n/feedback_localizations.dart';
 import '../services/metadata_collector.dart';
@@ -60,6 +61,7 @@ class FeedbackWidget extends StatefulWidget {
     this.showRating = false,
     this.showNps = false,
     this.localizations,
+    this.middlewares = const [],
   });
 
   /// The backend that receives the submitted [FeedbackEntry].
@@ -150,6 +152,21 @@ class FeedbackWidget extends StatefulWidget {
   /// Custom localisation strings. Falls back to [FeedbackLocalizations.of]
   /// from the widget tree, then [EnFeedbackLocalizations].
   final FeedbackLocalizations? localizations;
+
+  /// Optional middleware pipeline applied before every submission.
+  ///
+  /// Middleware runs in list order. Each step receives the entry returned by
+  /// the previous one. If any middleware returns `null` the submission is
+  /// cancelled silently — [backend] is never called and [onSuccess] / [onError]
+  /// are not invoked.
+  ///
+  /// ```dart
+  /// middlewares: [
+  ///   LoggingMiddleware(),
+  ///   RedactMiddleware(),
+  /// ]
+  /// ```
+  final List<FeedbackMiddleware> middlewares;
 
   @override
   State<FeedbackWidget> createState() => _FeedbackWidgetState();
@@ -322,8 +339,18 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
       npsScore: _npsScore,
     );
 
+    // Run the middleware chain — any step may transform or cancel the entry.
+    FeedbackEntry? processed = entry;
+    for (final middleware in widget.middlewares) {
+      processed = await middleware.process(processed!);
+      if (processed == null) {
+        if (mounted) setState(() => _isSubmitting = false);
+        return;
+      }
+    }
+
     try {
-      await widget.backend.submit(entry);
+      await widget.backend.submit(processed!);
 
       final wasQueued = widget.backend is QueuedBackend &&
           (widget.backend as QueuedBackend).lastSubmitWasQueued;
@@ -332,7 +359,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
       if (wasQueued) {
         widget.onQueued?.call();
-        widget.analytics?.onFeedbackQueued(entry);
+        widget.analytics?.onFeedbackQueued(processed);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -347,7 +374,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
         }
       } else {
         widget.onSuccess?.call();
-        widget.analytics?.onFeedbackSubmitted(entry);
+        widget.analytics?.onFeedbackSubmitted(processed);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

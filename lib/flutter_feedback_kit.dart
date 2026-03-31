@@ -6,6 +6,8 @@ export 'src/domain/entities/feedback_session_context.dart';
 export 'src/domain/repositories/feedback_analytics.dart';
 export 'src/domain/repositories/feedback_backend.dart';
 export 'src/domain/repositories/feedback_queue.dart';
+export 'src/domain/feedback_middleware.dart';
+export 'src/domain/middlewares/logging_middleware.dart';
 
 // Data
 export 'src/data/backends/webhook_backend.dart';
