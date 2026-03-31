@@ -1,6 +1,12 @@
 # Claude Code
 .mcp.json
-.claude/settings.local.json
+.claude/
+CLAUDE.md
+
+# Project-local files (not for GitHub)
+analysis/
+doc/
+*.pptx
 
 # Environment
 .env
