@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../domain/entities/feedback_category.dart';
 import '../domain/repositories/feedback_backend.dart';
+import '../services/speech_recognition_service.dart';
 import 'feedback_widget.dart';
 
 class FeedbackButton extends StatelessWidget {
@@ -14,11 +17,14 @@ class FeedbackButton extends StatelessWidget {
     this.onError,
     this.categories,
     this.maxMessageLength = 2000,
+    this.maxScreenshots = 5,
     this.submitLabel = 'Send Feedback',
     this.successMessage = 'Thank you for your feedback!',
     this.imageQuality = 60,
     this.maxImageWidth = 800,
     this.maxImageHeight = 800,
+    this.speechService,
+    this.onCaptureScreenshot,
   });
 
   final FeedbackBackend backend;
@@ -28,11 +34,14 @@ class FeedbackButton extends StatelessWidget {
   final void Function(Object)? onError;
   final List<FeedbackCategory>? categories;
   final int maxMessageLength;
+  final int maxScreenshots;
   final String submitLabel;
   final String successMessage;
   final int imageQuality;
   final double maxImageWidth;
   final double maxImageHeight;
+  final SpeechRecognitionService? speechService;
+  final Future<Uint8List?> Function()? onCaptureScreenshot;
 
   @override
   Widget build(BuildContext context) {
@@ -60,11 +69,14 @@ class FeedbackButton extends StatelessWidget {
             onError: onError,
             categories: categories,
             maxMessageLength: maxMessageLength,
+            maxScreenshots: maxScreenshots,
             submitLabel: submitLabel,
             successMessage: successMessage,
             imageQuality: imageQuality,
             maxImageWidth: maxImageWidth,
             maxImageHeight: maxImageHeight,
+            speechService: speechService,
+            onCaptureScreenshot: onCaptureScreenshot,
           ),
         ),
       ),

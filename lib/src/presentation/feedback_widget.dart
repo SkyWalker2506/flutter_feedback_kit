@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../domain/entities/feedback_category.dart';
 import '../domain/entities/feedback_entry.dart';
 import '../domain/repositories/feedback_backend.dart';
+import '../services/speech_recognition_service.dart';
 
 class FeedbackWidget extends StatefulWidget {
   const FeedbackWidget({
@@ -16,12 +17,15 @@ class FeedbackWidget extends StatefulWidget {
     this.onSuccess,
     this.onError,
     this.maxMessageLength = 2000,
+    this.maxScreenshots = 5,
     this.categories,
     this.submitLabel = 'Send Feedback',
     this.successMessage = 'Thank you for your feedback!',
     this.imageQuality = 60,
     this.maxImageWidth = 800,
     this.maxImageHeight = 800,
+    this.speechService,
+    this.onCaptureScreenshot,
   });
 
   final FeedbackBackend backend;
@@ -29,12 +33,24 @@ class FeedbackWidget extends StatefulWidget {
   final VoidCallback? onSuccess;
   final void Function(Object error)? onError;
   final int maxMessageLength;
+
+  /// Maximum screenshots that can be attached (default: 5).
+  final int maxScreenshots;
+
   final List<FeedbackCategory>? categories;
   final String submitLabel;
   final String successMessage;
   final int imageQuality;
   final double maxImageWidth;
   final double maxImageHeight;
+
+  /// Optional voice-to-text service. When provided, a mic button appears.
+  final SpeechRecognitionService? speechService;
+
+  /// Optional callback for full-screen capture.
+  /// Should return the captured PNG bytes, or `null` on cancel/failure.
+  /// When provided, a "Capture Screen" option appears alongside gallery.
+  final Future<Uint8List?> Function()? onCaptureScreenshot;
 
   @override
   State<FeedbackWidget> createState() => _FeedbackWidgetState();
@@ -46,17 +62,69 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   FeedbackCategory _selectedCategory = FeedbackCategory.bug;
   final List<String> _screenshots = [];
   bool _isSubmitting = false;
+  bool _isListening = false;
 
   List<FeedbackCategory> get _categories =>
       widget.categories ?? FeedbackCategory.values;
 
+  bool get _canAddScreenshot => _screenshots.length < widget.maxScreenshots;
+
   @override
   void dispose() {
+    widget.speechService?.cancel();
     _messageController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickScreenshot() async {
+  // ─── Input sanitization (ported from VocabApp) ───────────────────────────
+
+  String _sanitize(String input) {
+    final stripped = input.replaceAll(RegExp(r'[<>]'), '');
+    final trimmed = stripped.trim();
+    return trimmed.length > widget.maxMessageLength
+        ? trimmed.substring(0, widget.maxMessageLength)
+        : trimmed;
+  }
+
+  // ─── Voice input ─────────────────────────────────────────────────────────
+
+  Future<void> _toggleVoice() async {
+    final stt = widget.speechService;
+    if (stt == null) return;
+
+    if (_isListening) {
+      await stt.stop();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    final ok = await stt.ensureInitialized();
+    if (!ok) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone not available')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isListening = true);
+    await stt.listen(
+      onResult: (words, isFinal) {
+        if (mounted) {
+          _messageController.text = words;
+          _messageController.selection =
+              TextSelection.collapsed(offset: words.length);
+          if (isFinal) setState(() => _isListening = false);
+        }
+      },
+    );
+  }
+
+  // ─── Screenshot picking ───────────────────────────────────────────────────
+
+  Future<void> _pickFromGallery() async {
+    if (!_canAddScreenshot) return;
     final picker = ImagePicker();
     final file = await picker.pickImage(
       source: ImageSource.gallery,
@@ -65,14 +133,52 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
       maxHeight: widget.maxImageHeight,
     );
     if (file == null) return;
-
     final bytes = await file.readAsBytes();
     final encoded = await compute(base64Encode, bytes);
     if (!mounted) return;
-    setState(() {
-      _screenshots.add(encoded);
-    });
+    setState(() => _screenshots.add(encoded));
   }
+
+  Future<void> _captureScreen() async {
+    if (!_canAddScreenshot) return;
+    final bytes = await widget.onCaptureScreenshot?.call();
+    if (bytes == null || !mounted) return;
+    final encoded = await compute(base64Encode, bytes);
+    if (!mounted) return;
+    setState(() => _screenshots.add(encoded));
+  }
+
+  void _showScreenshotOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromGallery();
+              },
+            ),
+            if (widget.onCaptureScreenshot != null)
+              ListTile(
+                leading: const Icon(Icons.screenshot_outlined),
+                title: const Text('Capture screen'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _captureScreen();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Submit ───────────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -81,7 +187,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
     final entry = FeedbackEntry(
       category: _selectedCategory,
-      message: _messageController.text.trim(),
+      message: _sanitize(_messageController.text),
       platform: defaultTargetPlatform.name.toLowerCase(),
       appVersion: widget.appVersion,
       createdAt: DateTime.now(),
@@ -113,6 +219,8 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     }
   }
 
+  // ─── Build ────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -134,10 +242,23 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             controller: _messageController,
             maxLength: widget.maxMessageLength,
             maxLines: 5,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Message',
               alignLabelWithHint: true,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              suffixIcon: widget.speechService != null
+                  ? IconButton(
+                      icon: Icon(
+                        _isListening ? Icons.mic : Icons.mic_none_outlined,
+                        color: _isListening
+                            ? Theme.of(context).colorScheme.error
+                            : null,
+                      ),
+                      tooltip:
+                          _isListening ? 'Stop listening' : 'Voice input',
+                      onPressed: _toggleVoice,
+                    )
+                  : null,
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Message is required';
@@ -147,7 +268,10 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
           const SizedBox(height: 8),
           _ScreenshotRow(
             screenshots: _screenshots,
-            onAdd: _pickScreenshot,
+            canAdd: _canAddScreenshot,
+            onAdd: widget.onCaptureScreenshot != null
+                ? _showScreenshotOptions
+                : _pickFromGallery,
             onRemove: (i) => setState(() => _screenshots.removeAt(i)),
           ),
           const SizedBox(height: 16),
@@ -170,14 +294,18 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   }
 }
 
+// ─── Screenshot row ───────────────────────────────────────────────────────────
+
 class _ScreenshotRow extends StatelessWidget {
   const _ScreenshotRow({
     required this.screenshots,
+    required this.canAdd,
     required this.onAdd,
     required this.onRemove,
   });
 
   final List<String> screenshots;
+  final bool canAdd;
   final VoidCallback onAdd;
   final void Function(int) onRemove;
 
@@ -197,7 +325,8 @@ class _ScreenshotRow extends StatelessWidget {
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
-                  semanticLabel: 'Screenshot ${i + 1} of ${screenshots.length}',
+                  semanticLabel:
+                      'Screenshot ${i + 1} of ${screenshots.length}',
                 ),
               ),
               Positioned(
@@ -218,7 +347,7 @@ class _ScreenshotRow extends StatelessWidget {
             ],
           );
         }),
-        if (screenshots.length < 3)
+        if (canAdd)
           OutlinedButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
