@@ -6,24 +6,32 @@ import 'package:image_picker/image_picker.dart';
 
 import '../domain/entities/feedback_category.dart';
 import '../domain/entities/feedback_entry.dart';
+import '../domain/repositories/feedback_analytics.dart';
 import '../domain/repositories/feedback_backend.dart';
+import '../domain/entities/feedback_session_context.dart';
+import '../i18n/feedback_localizations.dart';
+import '../services/metadata_collector.dart';
 import '../services/speech_recognition_service.dart';
+import '../data/backends/queued_backend.dart';
+import 'feedback_nps_widget.dart';
+import 'feedback_rating_widget.dart';
 import 'feedback_theme.dart';
 
 /// An inline form widget for collecting user feedback.
 ///
 /// Provides category selection, free-text input with optional voice dictation,
-/// and screenshot attachment (gallery or screen capture). Submits via a
-/// pluggable [FeedbackBackend].
+/// emoji rating, NPS score, and screenshot attachment. Submits via a pluggable
+/// [FeedbackBackend].
 ///
-/// For a ready-to-use floating action button that opens this form in a bottom
-/// sheet, see [FeedbackButton].
+/// For a ready-to-use floating action button see [FeedbackButton].
 ///
 /// ```dart
 /// FeedbackWidget(
 ///   backend: WebhookBackend(url: 'https://example.com/feedback'),
 ///   appVersion: '1.0.0',
 ///   onSuccess: () => Navigator.pop(context),
+///   metadataCollector: FeedbackMetadataCollector(),
+///   showRating: true,
 /// )
 /// ```
 class FeedbackWidget extends StatefulWidget {
@@ -33,16 +41,25 @@ class FeedbackWidget extends StatefulWidget {
     required this.appVersion,
     this.onSuccess,
     this.onError,
+    this.onQueued,
     this.maxMessageLength = 2000,
     this.maxScreenshots = 5,
     this.categories,
-    this.submitLabel = 'Send Feedback',
-    this.successMessage = 'Thank you for your feedback!',
+    this.submitLabel,
+    this.successMessage,
+    this.queuedMessage,
     this.imageQuality = 60,
     this.maxImageWidth = 800,
     this.maxImageHeight = 800,
     this.speechService,
     this.onCaptureScreenshot,
+    this.autoCapture = false,
+    this.analytics,
+    this.metadataCollector,
+    this.sessionContextBuilder,
+    this.showRating = false,
+    this.showNps = false,
+    this.localizations,
   });
 
   /// The backend that receives the submitted [FeedbackEntry].
@@ -57,22 +74,28 @@ class FeedbackWidget extends StatefulWidget {
   /// Called when submission fails, with the thrown error as argument.
   final void Function(Object error)? onError;
 
-  /// Maximum number of characters allowed in the message field. Default: 2000.
+  /// Called when the entry is saved to the offline queue instead of sent.
+  ///
+  /// Only fires when [backend] is a [QueuedBackend] and connectivity is absent.
+  final VoidCallback? onQueued;
+
+  /// Maximum characters in the message field. Default: 2000.
   final int maxMessageLength;
 
-  /// Maximum number of screenshots that can be attached. Default: 5.
+  /// Maximum screenshots that can be attached. Default: 5.
   final int maxScreenshots;
 
-  /// Categories shown in the dropdown.
-  ///
-  /// Defaults to all [FeedbackCategory] values when `null`.
+  /// Categories shown in the dropdown. Defaults to all [FeedbackCategory] values.
   final List<FeedbackCategory>? categories;
 
-  /// Label of the submit button. Default: `'Send Feedback'`.
-  final String submitLabel;
+  /// Custom submit button label. Overrides [FeedbackLocalizations.submitLabel].
+  final String? submitLabel;
 
-  /// Snack-bar message shown after a successful submission.
-  final String successMessage;
+  /// Custom success snack-bar message. Overrides [FeedbackLocalizations.successMessage].
+  final String? successMessage;
+
+  /// Custom queued snack-bar message. Overrides [FeedbackLocalizations.queuedMessage].
+  final String? queuedMessage;
 
   /// JPEG quality for gallery images (0–100). Default: 60.
   final int imageQuality;
@@ -83,18 +106,40 @@ class FeedbackWidget extends StatefulWidget {
   /// Maximum height for gallery images in pixels. Default: 800.
   final double maxImageHeight;
 
-  /// Optional voice-to-text service.
-  ///
-  /// When provided, a microphone button appears in the message field.
-  /// See [SpeechRecognitionService].
+  /// Optional voice-to-text service. Enables mic button when provided.
   final SpeechRecognitionService? speechService;
 
   /// Optional callback for full-screen capture.
   ///
-  /// Should return the captured PNG bytes, or `null` on cancel/failure.
-  /// When provided, a "Capture Screen" option appears alongside the gallery
-  /// picker in the screenshot bottom sheet.
+  /// Returns PNG bytes or `null` on cancel. When provided, a "Capture Screen"
+  /// option appears alongside the gallery picker.
   final Future<Uint8List?> Function()? onCaptureScreenshot;
+
+  /// When `true` and [onCaptureScreenshot] is provided, automatically
+  /// captures the screen when the widget first renders. Default: `false`.
+  final bool autoCapture;
+
+  /// Optional analytics observer for widget lifecycle events.
+  final FeedbackAnalytics? analytics;
+
+  /// Optional metadata collector — enriches each [FeedbackEntry] with
+  /// OS/device/app info at submission time.
+  final FeedbackMetadataCollector? metadataCollector;
+
+  /// Optional session context builder called at submission time.
+  ///
+  /// Use this to attach the current user ID, route, or custom key-value pairs.
+  final FeedbackSessionContext? Function()? sessionContextBuilder;
+
+  /// Show an emoji CSAT rating row (1–5). Default: `false`.
+  final bool showRating;
+
+  /// Show an NPS (0–10) row. Default: `false`.
+  final bool showNps;
+
+  /// Custom localisation strings. Falls back to [FeedbackLocalizations.of]
+  /// from the widget tree, then [EnFeedbackLocalizations].
+  final FeedbackLocalizations? localizations;
 
   @override
   State<FeedbackWidget> createState() => _FeedbackWidgetState();
@@ -107,16 +152,34 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   final List<String> _screenshots = [];
   bool _isSubmitting = false;
   bool _isListening = false;
+  int? _rating;
+  int? _npsScore;
+  bool _submitted = false;
 
   List<FeedbackCategory> get _categories =>
       widget.categories ?? FeedbackCategory.values;
 
   bool get _canAddScreenshot => _screenshots.length < widget.maxScreenshots;
 
+  FeedbackLocalizations get _l10n =>
+      widget.localizations ??
+      (context.mounted ? FeedbackLocalizations.of(context) : const EnFeedbackLocalizations());
+
+  @override
+  void initState() {
+    super.initState();
+    widget.analytics?.onFeedbackShown();
+    if (widget.autoCapture && widget.onCaptureScreenshot != null) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _captureScreen());
+    }
+  }
+
   @override
   void dispose() {
     widget.speechService?.cancel();
     _messageController.dispose();
+    if (!_submitted) widget.analytics?.onFeedbackDismissed();
     super.dispose();
   }
 
@@ -146,12 +209,13 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     if (!ok) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Microphone not available')),
+          SnackBar(content: Text(_l10n.microphoneNotAvailable)),
         );
       }
       return;
     }
 
+    widget.analytics?.onVoiceInputUsed();
     setState(() => _isListening = true);
     await stt.listen(
       onResult: (words, isFinal) {
@@ -181,6 +245,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     final encoded = await compute(base64Encode, bytes);
     if (!mounted) return;
     setState(() => _screenshots.add(encoded));
+    widget.analytics?.onScreenshotAdded(_screenshots.length);
   }
 
   Future<void> _captureScreen() async {
@@ -190,6 +255,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     final encoded = await compute(base64Encode, bytes);
     if (!mounted) return;
     setState(() => _screenshots.add(encoded));
+    widget.analytics?.onScreenshotAdded(_screenshots.length);
   }
 
   void _showScreenshotOptions() {
@@ -201,7 +267,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
+              title: Text(_l10n.chooseFromGalleryLabel),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickFromGallery();
@@ -210,7 +276,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             if (widget.onCaptureScreenshot != null)
               ListTile(
                 leading: const Icon(Icons.screenshot_outlined),
-                title: const Text('Capture screen'),
+                title: Text(_l10n.captureScreenLabel),
                 onTap: () {
                   Navigator.pop(ctx);
                   _captureScreen();
@@ -229,6 +295,9 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
     setState(() => _isSubmitting = true);
 
+    final metadata = await widget.metadataCollector?.collect();
+    final sessionContext = widget.sessionContextBuilder?.call();
+
     final entry = FeedbackEntry(
       category: _selectedCategory,
       message: _sanitize(_messageController.text),
@@ -236,19 +305,54 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
       appVersion: widget.appVersion,
       createdAt: DateTime.now(),
       screenshots: List.unmodifiable(_screenshots),
+      metadata: metadata,
+      sessionContext: sessionContext,
+      rating: _rating,
+      npsScore: _npsScore,
     );
 
     try {
       await widget.backend.submit(entry);
-      widget.onSuccess?.call();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(widget.successMessage)),
-        );
-        _messageController.clear();
-        setState(() => _screenshots.clear());
+
+      final wasQueued = widget.backend is QueuedBackend &&
+          (widget.backend as QueuedBackend).lastSubmitWasQueued;
+
+      _submitted = true;
+
+      if (wasQueued) {
+        widget.onQueued?.call();
+        widget.analytics?.onFeedbackQueued(entry);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(widget.queuedMessage ?? _l10n.queuedMessage)),
+          );
+          _messageController.clear();
+          setState(() {
+            _screenshots.clear();
+            _rating = null;
+            _npsScore = null;
+          });
+        }
+      } else {
+        widget.onSuccess?.call();
+        widget.analytics?.onFeedbackSubmitted(entry);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text(widget.successMessage ?? _l10n.successMessage)),
+          );
+          _messageController.clear();
+          setState(() {
+            _screenshots.clear();
+            _rating = null;
+            _npsScore = null;
+          });
+        }
       }
     } catch (e) {
+      _submitted = false;
       widget.onError?.call(e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -268,6 +372,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   @override
   Widget build(BuildContext context) {
     final feedbackTheme = FeedbackTheme.of(context);
+    final l10n = widget.localizations ?? FeedbackLocalizations.of(context);
 
     return Form(
       key: _formKey,
@@ -275,9 +380,25 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (widget.showRating) ...[
+            FeedbackRatingWidget(
+              label: l10n.ratingLabel,
+              initialRating: _rating,
+              onRatingChanged: (v) => setState(() => _rating = v),
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (widget.showNps) ...[
+            FeedbackNpsWidget(
+              question: l10n.npsQuestion,
+              initialScore: _npsScore,
+              onScoreChanged: (v) => setState(() => _npsScore = v),
+            ),
+            const SizedBox(height: 16),
+          ],
           DropdownButtonFormField<FeedbackCategory>(
             initialValue: _selectedCategory,
-            decoration: const InputDecoration(labelText: 'Category'),
+            decoration: InputDecoration(labelText: l10n.categoryLabel),
             items: _categories
                 .map((c) => DropdownMenuItem(value: c, child: Text(c.label)))
                 .toList(),
@@ -289,7 +410,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             maxLength: widget.maxMessageLength,
             maxLines: 5,
             decoration: InputDecoration(
-              labelText: 'Message',
+              labelText: l10n.messageLabel,
               alignLabelWithHint: true,
               border: const OutlineInputBorder(),
               suffixIcon: widget.speechService != null
@@ -300,14 +421,15 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                             ? Theme.of(context).colorScheme.error
                             : null,
                       ),
-                      tooltip:
-                          _isListening ? 'Stop listening' : 'Voice input',
+                      tooltip: _isListening
+                          ? l10n.stopListeningTooltip
+                          : l10n.voiceInputTooltip,
                       onPressed: _toggleVoice,
                     )
                   : null,
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Message is required';
+              if (v == null || v.trim().isEmpty) return l10n.messageRequired;
               return null;
             },
           ),
@@ -315,6 +437,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
           _ScreenshotRow(
             screenshots: _screenshots,
             canAdd: _canAddScreenshot,
+            screenshotLabel: l10n.screenshotLabel,
             onAdd: widget.onCaptureScreenshot != null
                 ? _showScreenshotOptions
                 : _pickFromGallery,
@@ -333,11 +456,11 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                     height: 20,
                     width: 20,
                     child: Semantics(
-                      label: 'Sending feedback, please wait',
+                      label: l10n.sendingLabel,
                       child: const CircularProgressIndicator(strokeWidth: 2),
                     ),
                   )
-                : Text(widget.submitLabel),
+                : Text(widget.submitLabel ?? l10n.submitLabel),
           ),
         ],
       ),
@@ -351,12 +474,14 @@ class _ScreenshotRow extends StatelessWidget {
   const _ScreenshotRow({
     required this.screenshots,
     required this.canAdd,
+    required this.screenshotLabel,
     required this.onAdd,
     required this.onRemove,
   });
 
   final List<String> screenshots;
   final bool canAdd;
+  final String screenshotLabel;
   final VoidCallback onAdd;
   final void Function(int) onRemove;
 
@@ -402,7 +527,7 @@ class _ScreenshotRow extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
-            label: const Text('Screenshot'),
+            label: Text(screenshotLabel),
           ),
       ],
     );

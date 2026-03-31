@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import 'feedback_category.dart';
+import 'feedback_metadata.dart';
+import 'feedback_session_context.dart';
 
 /// Represents a single piece of in-app user feedback.
 ///
@@ -18,6 +20,10 @@ class FeedbackEntry {
     required this.appVersion,
     required this.createdAt,
     this.screenshots = const [],
+    this.metadata,
+    this.sessionContext,
+    this.rating,
+    this.npsScore,
   });
 
   /// Deserialises from a JSON map previously produced by [toJson].
@@ -35,6 +41,16 @@ class FeedbackEntry {
           DateTime.now(),
       screenshots:
           (json['screenshots'] as List<dynamic>?)?.cast<String>() ?? const [],
+      metadata: json['metadata'] != null
+          ? FeedbackMetadata.fromJson(
+              json['metadata'] as Map<String, dynamic>)
+          : null,
+      sessionContext: json['sessionContext'] != null
+          ? FeedbackSessionContext.fromJson(
+              json['sessionContext'] as Map<String, dynamic>)
+          : null,
+      rating: json['rating'] as int?,
+      npsScore: json['npsScore'] as int?,
     );
   }
 
@@ -56,6 +72,18 @@ class FeedbackEntry {
   /// Base64-encoded PNG screenshots attached to this entry.
   final List<String> screenshots;
 
+  /// Optional device / app metadata collected by [FeedbackMetadataCollector].
+  final FeedbackMetadata? metadata;
+
+  /// Optional session context (user ID, current route, custom KVs).
+  final FeedbackSessionContext? sessionContext;
+
+  /// Optional 1–5 satisfaction rating from [FeedbackRatingWidget].
+  final int? rating;
+
+  /// Optional 0–10 Net Promoter Score from [FeedbackNpsWidget].
+  final int? npsScore;
+
   /// Returns a copy with the specified fields replaced.
   FeedbackEntry copyWith({
     FeedbackCategory? category,
@@ -64,6 +92,10 @@ class FeedbackEntry {
     String? appVersion,
     DateTime? createdAt,
     List<String>? screenshots,
+    FeedbackMetadata? metadata,
+    FeedbackSessionContext? sessionContext,
+    int? rating,
+    int? npsScore,
   }) {
     return FeedbackEntry(
       category: category ?? this.category,
@@ -72,6 +104,10 @@ class FeedbackEntry {
       appVersion: appVersion ?? this.appVersion,
       createdAt: createdAt ?? this.createdAt,
       screenshots: screenshots ?? this.screenshots,
+      metadata: metadata ?? this.metadata,
+      sessionContext: sessionContext ?? this.sessionContext,
+      rating: rating ?? this.rating,
+      npsScore: npsScore ?? this.npsScore,
     );
   }
 
@@ -83,6 +119,11 @@ class FeedbackEntry {
         'appVersion': appVersion,
         'createdAt': createdAt.toIso8601String(),
         'screenshots': screenshots,
+        if (metadata != null) 'metadata': metadata!.toJson(),
+        if (sessionContext != null)
+          'sessionContext': sessionContext!.toJson(),
+        if (rating != null) 'rating': rating,
+        if (npsScore != null) 'npsScore': npsScore,
       };
 
   /// Encodes this entry to a compact JSON string suitable for storage.
@@ -103,7 +144,11 @@ class FeedbackEntry {
           platform == other.platform &&
           appVersion == other.appVersion &&
           createdAt == other.createdAt &&
-          listEquals(screenshots, other.screenshots);
+          listEquals(screenshots, other.screenshots) &&
+          metadata == other.metadata &&
+          sessionContext == other.sessionContext &&
+          rating == other.rating &&
+          npsScore == other.npsScore;
 
   @override
   int get hashCode => Object.hash(
@@ -113,5 +158,9 @@ class FeedbackEntry {
         appVersion,
         createdAt,
         Object.hashAll(screenshots),
+        metadata,
+        sessionContext,
+        rating,
+        npsScore,
       );
 }

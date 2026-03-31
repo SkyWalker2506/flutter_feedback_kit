@@ -14,6 +14,11 @@ import '../../services/connectivity_service.dart';
 /// final backend = QueuedBackend(
 ///   backend: WebhookBackend(url: 'https://example.com/feedback'),
 ///   queue: SharedPrefsQueue(),
+///   onQueued: (entry) {
+///     ScaffoldMessenger.of(context).showSnackBar(
+///       const SnackBar(content: Text('Saved offline. Will send when connected.')),
+///     );
+///   },
 /// );
 /// ```
 class QueuedBackend implements FeedbackBackend {
@@ -24,6 +29,7 @@ class QueuedBackend implements FeedbackBackend {
     required FeedbackBackend backend,
     required FeedbackQueue queue,
     ConnectivityService? connectivity,
+    this.onQueued,
   })  : _backend = backend,
         _queue = queue,
         _connectivity = connectivity ?? const ConnectivityService();
@@ -32,19 +38,36 @@ class QueuedBackend implements FeedbackBackend {
   final FeedbackQueue _queue;
   final ConnectivityService _connectivity;
 
+  /// Optional callback fired whenever an entry is added to the queue instead
+  /// of being delivered immediately.
+  final void Function(FeedbackEntry entry)? onQueued;
+
+  bool _lastSubmitWasQueued = false;
+
+  /// `true` if the most recent [submit] call enqueued rather than delivered.
+  ///
+  /// [FeedbackWidget] uses this flag to show a "saved offline" message
+  /// when it detects that its backend is a [QueuedBackend].
+  bool get lastSubmitWasQueued => _lastSubmitWasQueued;
+
   /// Submits [entry] to the underlying backend, or enqueues it if offline
   /// or if the backend throws.
   @override
   Future<void> submit(FeedbackEntry entry) async {
+    _lastSubmitWasQueued = false;
     final online = await _connectivity.isOnline();
     if (!online) {
       await _queue.enqueue(entry);
+      _lastSubmitWasQueued = true;
+      onQueued?.call(entry);
       return;
     }
     try {
       await _backend.submit(entry);
     } catch (_) {
       await _queue.enqueue(entry);
+      _lastSubmitWasQueued = true;
+      onQueued?.call(entry);
     }
   }
 

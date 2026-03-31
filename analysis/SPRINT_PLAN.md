@@ -1,7 +1,7 @@
 # flutter_feedback_kit — Sprint Plan
-> Güncellendi: 2026-03-31 | Sprint 2+3+4+5 tamamlandı | Sprint 6-9 planlandı
+> Güncellendi: 2026-03-31 | Sprint 2+3+4+5+6+7+8 tamamlandı
 
-Sprint 1→5 tamamlandı. Sprint 6-9 `NEW_FEATURES_RESEARCH.md` araştırmasına dayalı olarak planlandı.
+Sprint 1→8 tamamlandı.
 
 ---
 
@@ -40,53 +40,41 @@ Tema desteği, widget testleri, Dart doc, README, pubspec polish
 
 ---
 
-## Sprint 6 — Firebase Ekosistemi + Metadata & Events (P2)
-**Odak:** İlk backend eklentisi, metadata otomatik toplama, analytics hooks, pub.dev yayını
-**Kapasite:** 10 SP
-**Kaynak:** NEW_FEATURES_RESEARCH.md F-01, F-12, F-15, F-17 + mevcut plan
+## ✅ Sprint 6 — Firebase Ekosistemi + Metadata & Events (P2) — DONE
 
-| # | Task | Kategori | Efor | Kaynak |
-|---|------|----------|------|--------|
-| 1 | flutter_feedback_kit_firebase (Firestore + Storage backend paketi) | growth,arch | L=3 | F-01 |
-| 2 | FeedbackMetadata — otomatik device/app info zenginleştirme | arch | S=1 | F-12 |
-| 3 | FeedbackAnalytics interface (event callback hooks) | analytics,arch | S=1 | F-15 |
-| 4 | FeedbackSessionContext — route/user/custom key-value context | arch | S=1 | F-17 |
-| 5 | pub.dev yayını (flutter_feedback_kit v0.1.0) | growth | S=1 | PLAN |
-| 6 | VocabApp'te flutter_feedback_kit_firebase tam entegrasyonu | growth | M=2 | PLAN |
-
-> **Not F-01 (firebase paketi):** Ayrı pub.dev paketi. `FeedbackBackend` implement eder, `firebase_core` + `cloud_firestore` + `firebase_storage` bağımlılıkları sadece bu pakette.
+| # | Task | Durum |
+|---|------|-------|
+| 1 | flutter_feedback_kit_firebase (Firestore + Storage backend paketi) | ✅ |
+| 2 | FeedbackMetadata + FeedbackMetadataCollector | ✅ |
+| 3 | FeedbackAnalytics interface (event callback hooks) | ✅ |
+| 4 | FeedbackSessionContext (userId, currentRoute, extra KVs) | ✅ |
+| 5 | QueuedBackend.onQueued callback + lastSubmitWasQueued flag | ✅ |
+| 6 | FeedbackWidget: onQueued, analytics, metadataCollector, sessionContextBuilder | ✅ |
 
 ---
 
-## Sprint 7 — NPS + Smart Trigger + Sentry/Jira Backends (P2)
-**Odak:** Ölçüm araçları, akıllı zamanlama, kurumsal backend entegrasyonları
-**Kapasite:** 10 SP
-**Kaynak:** NEW_FEATURES_RESEARCH.md F-02, F-03, F-06, F-07, F-10
+## ✅ Sprint 7 — NPS + Smart Trigger + Sentry/Jira Backends (P2) — DONE
 
-| # | Task | Kategori | Efor | Kaynak |
-|---|------|----------|------|--------|
-| 1 | NPS / Promoter Score widget modülü | ui,analytics | M=2 | F-06 |
-| 2 | Emoji CSAT rating widget (5 seviyeli mood skoru) | ui | S=1 | F-07 |
-| 3 | flutter_feedback_kit_sentry (Sentry UserFeedback backend) | arch,growth | M=2 | F-02 |
-| 4 | flutter_feedback_kit_jira (Jira Cloud issue backend) | arch,growth | M=2 | F-03 |
-| 5 | FeedbackTrigger — koşullu prompt sistemi (minLaunches, minDays) | arch,ui | L=3 | F-10 |
-
-> **Not F-10 (SmartTrigger):** `SharedPreferences` tabanlı durum takibi. `rate_my_app` koşul sistemini feedback için uyarlar. "Sonra sor / Gösterme" seçenekleri dahil.
+| # | Task | Durum |
+|---|------|-------|
+| 1 | FeedbackNpsWidget (0–10 NPS scale) | ✅ |
+| 2 | FeedbackRatingWidget (emoji CSAT 1–5) | ✅ |
+| 3 | flutter_feedback_kit_sentry (Sentry UserFeedback backend) | ✅ |
+| 4 | flutter_feedback_kit_jira (Jira Cloud issue backend) | ✅ |
+| 5 | FeedbackTrigger (minLaunches, minDays, repeatAfterDays, oncePerVersion) | ✅ |
+| 6 | FeedbackEntry.rating + npsScore fields | ✅ |
+| 7 | FeedbackButton.trigger param | ✅ |
 
 ---
 
-## Sprint 8 — Screenshot Annotation + i18n (P3)
-**Odak:** En büyük rekabet açığı (annotation), uluslararasılaştırma
-**Kapasite:** 9 SP
-**Kaynak:** NEW_FEATURES_RESEARCH.md F-05, F-09
+## ✅ Sprint 8 — Screenshot Annotation + i18n (P3) — DONE
 
-| # | Task | Kategori | Efor | Kaynak |
-|---|------|----------|------|--------|
-| 1 | Screenshot annotation overlay (kalem, dikdörtgen, ok, blur) | ui | XL=5 | F-05 |
-| 2 | Localization / i18n desteği (FeedbackLocalizations, EN+TR+DE+FR+ES) | ui,growth | M=2 | F-09 |
-| 3 | Otomatik screen capture (`autoCapture: true`, RepaintBoundary) | ui | M=2 | F-08 |
-
-> **Not F-05 (annotation):** `feedback` paketinin 1.6K beğenisinin ana kaynağı. CustomPainter tabanlı; renk seçici, undo/redo, privacy blur. Bu sprint'in odağı.
+| # | Task | Durum |
+|---|------|-------|
+| 1 | FeedbackAnnotationOverlay (CustomPainter, colour palette, undo, stroke width) | ✅ |
+| 2 | FeedbackLocalizations + 5 dil (EN, TR, DE, FR, ES) + delegate | ✅ |
+| 3 | autoCapture param (FeedbackWidget + FeedbackButton) | ✅ |
+| 4 | FeedbackWidget: i18n entegrasyonu (tüm string'ler localizations'dan) | ✅ |
 
 ---
 
