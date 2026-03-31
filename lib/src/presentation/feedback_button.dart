@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../domain/entities/feedback_category.dart';
+import '../domain/feedback_middleware.dart';
 import '../domain/repositories/feedback_analytics.dart';
 import '../domain/repositories/feedback_backend.dart';
 import '../domain/entities/feedback_session_context.dart';
@@ -58,6 +59,7 @@ class FeedbackButton extends StatelessWidget {
     this.showNps = false,
     this.localizations,
     this.trigger,
+    this.middlewares = const [],
   });
 
   final FeedbackBackend backend;
@@ -113,6 +115,12 @@ class FeedbackButton extends StatelessWidget {
   /// before opening and calls [FeedbackTrigger.markShown] after opening.
   final FeedbackTrigger? trigger;
 
+  /// Optional middleware pipeline forwarded to [FeedbackWidget].
+  ///
+  /// Runs in list order before every submission. A middleware returning `null`
+  /// cancels the submission silently.
+  final List<FeedbackMiddleware> middlewares;
+
   Future<void> _open(BuildContext context) async {
     if (trigger != null) {
       final show = await trigger!.shouldShow(appVersion: appVersion);
@@ -167,6 +175,7 @@ class FeedbackButton extends StatelessWidget {
             showRating: showRating,
             showNps: showNps,
             localizations: localizations,
+            middlewares: middlewares,
           ),
         ),
       ),
