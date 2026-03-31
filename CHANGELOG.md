@@ -1,3 +1,9 @@
+## 0.1.1
+
+- Add MIT license
+- Fix dart doc warnings (0 warnings)
+- Broaden version constraints for device_info_plus and package_info_plus
+
 ## 0.2.0 (Unreleased)
 
 ### Security
