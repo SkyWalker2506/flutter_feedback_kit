@@ -1,3 +1,7 @@
+## 0.1.2
+
+- Fix pubspec topics (max 5 allowed)
+
 ## 0.1.1
 
 - Add MIT license
