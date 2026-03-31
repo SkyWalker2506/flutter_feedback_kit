@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  analyze-and-test:
+    name: Analyze & Test (root)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,4 +18,20 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
-# CI Test
+
+  analyze-firebase:
+    name: Analyze (flutter_feedback_kit_firebase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Get root package dependencies
+        run: flutter pub get
+      - name: Get firebase sub-package dependencies
+        working-directory: packages/flutter_feedback_kit_firebase
+        run: flutter pub get
+      - name: Analyze firebase sub-package
+        working-directory: packages/flutter_feedback_kit_firebase
+        run: flutter analyze

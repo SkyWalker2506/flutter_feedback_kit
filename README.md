@@ -1,5 +1,7 @@
 # flutter_feedback_kit
 
+[![CI](https://github.com/SkyWalker2506/flutter_feedback_kit/actions/workflows/ci.yml/badge.svg)](https://github.com/SkyWalker2506/flutter_feedback_kit/actions/workflows/ci.yml)
+
 A Flutter package for collecting in-app user feedback — drop-in widget, voice input, offline queue, screenshot capture, and a pluggable backend interface.
 
 ## Features
