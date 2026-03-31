@@ -3,19 +3,23 @@ import '../../domain/repositories/feedback_backend.dart';
 import '../../domain/repositories/feedback_queue.dart';
 import '../../services/connectivity_service.dart';
 
-/// Wraps any [FeedbackBackend] with offline-queue support.
+/// Wraps any [FeedbackBackend] with transparent offline-queue support.
 ///
-/// - If the device is offline, [submit] silently enqueues the entry.
-/// - If the backend throws, the entry is enqueued instead of propagating.
-/// - Call [flushQueue] when connectivity is restored.
+/// - When the device is **offline**, [submit] silently enqueues the entry.
+/// - When the device is **online** but the backend throws, the entry is
+///   enqueued instead of propagating the exception.
+/// - Call [flushQueue] after connectivity is restored to drain the queue.
 ///
 /// ```dart
 /// final backend = QueuedBackend(
-///   backend: WebhookBackend(url: 'https://...'),
+///   backend: WebhookBackend(url: 'https://example.com/feedback'),
 ///   queue: SharedPrefsQueue(),
 /// );
 /// ```
 class QueuedBackend implements FeedbackBackend {
+  /// Creates a [QueuedBackend].
+  ///
+  /// An optional [connectivity] override is accepted for testing.
   QueuedBackend({
     required FeedbackBackend backend,
     required FeedbackQueue queue,
@@ -28,6 +32,8 @@ class QueuedBackend implements FeedbackBackend {
   final FeedbackQueue _queue;
   final ConnectivityService _connectivity;
 
+  /// Submits [entry] to the underlying backend, or enqueues it if offline
+  /// or if the backend throws.
   @override
   Future<void> submit(FeedbackEntry entry) async {
     final online = await _connectivity.isOnline();
@@ -42,8 +48,12 @@ class QueuedBackend implements FeedbackBackend {
     }
   }
 
-  /// Attempts to send all queued entries via the underlying backend.
-  /// Returns the number of successfully flushed entries.
+  /// Attempts to deliver all queued entries via the underlying backend.
+  ///
+  /// Stops at the first failure and preserves remaining entries for the next
+  /// attempt. Clears the queue only when **all** entries are sent successfully.
+  ///
+  /// Returns the number of successfully delivered entries.
   Future<int> flushQueue() async {
     final online = await _connectivity.isOnline();
     if (!online) return 0;
@@ -57,7 +67,7 @@ class QueuedBackend implements FeedbackBackend {
         await _backend.submit(entry);
         sent++;
       } catch (_) {
-        break; // stop on first failure; try again next time
+        break;
       }
     }
 

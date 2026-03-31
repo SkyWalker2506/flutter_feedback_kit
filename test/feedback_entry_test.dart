@@ -3,11 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('FeedbackCategory', () {
-    test('label returns correct string for each category', () {
+    test('label returns correct string for all 8 categories', () {
       expect(FeedbackCategory.bug.label, 'Bug');
       expect(FeedbackCategory.suggestion.label, 'Suggestion');
       expect(FeedbackCategory.ui.label, 'UI/UX');
       expect(FeedbackCategory.performance.label, 'Performance');
+      expect(FeedbackCategory.translation.label, 'Translation');
+      expect(FeedbackCategory.featureRequest.label, 'Feature Request');
+      expect(FeedbackCategory.accessibility.label, 'Accessibility');
       expect(FeedbackCategory.other.label, 'Other');
     });
   });
@@ -44,6 +47,29 @@ void main() {
 
     test('screenshots default to empty list', () {
       expect(entry.screenshots, isEmpty);
+    });
+
+    test('fromJson round-trips toJson', () {
+      final json = entry.toJson();
+      final restored = FeedbackEntry.fromJson(json);
+      expect(restored, equals(entry));
+    });
+
+    test('encode / decode round-trip', () {
+      final encoded = entry.encode();
+      final decoded = FeedbackEntry.decode(encoded);
+      expect(decoded, equals(entry));
+    });
+
+    test('fromJson uses other category for unknown value', () {
+      final json = entry.toJson()..['category'] = 'unknown_value';
+      final restored = FeedbackEntry.fromJson(json);
+      expect(restored.category, FeedbackCategory.other);
+    });
+
+    test('screenshots are included in equality check', () {
+      final withScreenshot = entry.copyWith(screenshots: ['abc123']);
+      expect(entry == withScreenshot, isFalse);
     });
   });
 }

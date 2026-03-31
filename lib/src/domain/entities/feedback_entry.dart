@@ -4,7 +4,13 @@ import 'package:flutter/foundation.dart';
 
 import 'feedback_category.dart';
 
+/// Represents a single piece of in-app user feedback.
+///
+/// Entries are immutable value objects. Use [copyWith] to produce modified
+/// copies, and [toJson] / [fromJson] (or the compact [encode] / [decode] pair)
+/// for serialisation — e.g. when persisting to a queue.
 class FeedbackEntry {
+  /// Creates a feedback entry.
   const FeedbackEntry({
     required this.category,
     required this.message,
@@ -14,13 +20,7 @@ class FeedbackEntry {
     this.screenshots = const [],
   });
 
-  final FeedbackCategory category;
-  final String message;
-  final String platform;
-  final String appVersion;
-  final DateTime createdAt;
-  final List<String> screenshots; // base64-encoded
-
+  /// Deserialises from a JSON map previously produced by [toJson].
   factory FeedbackEntry.fromJson(Map<String, dynamic> json) {
     return FeedbackEntry(
       category: FeedbackCategory.values.firstWhere(
@@ -38,6 +38,25 @@ class FeedbackEntry {
     );
   }
 
+  /// The category selected by the user.
+  final FeedbackCategory category;
+
+  /// The free-text message entered by the user (max 2 000 characters).
+  final String message;
+
+  /// Platform identifier, e.g. `'android'` or `'ios'`.
+  final String platform;
+
+  /// Application version string at the time of submission.
+  final String appVersion;
+
+  /// UTC timestamp when the entry was created.
+  final DateTime createdAt;
+
+  /// Base64-encoded PNG screenshots attached to this entry.
+  final List<String> screenshots;
+
+  /// Returns a copy with the specified fields replaced.
   FeedbackEntry copyWith({
     FeedbackCategory? category,
     String? message,
@@ -56,6 +75,7 @@ class FeedbackEntry {
     );
   }
 
+  /// Serialises this entry to a JSON-compatible map.
   Map<String, dynamic> toJson() => {
         'category': category.name,
         'message': message,
@@ -65,8 +85,12 @@ class FeedbackEntry {
         'screenshots': screenshots,
       };
 
+  /// Encodes this entry to a compact JSON string suitable for storage.
+  ///
+  /// Use [decode] to restore the entry.
   String encode() => jsonEncode(toJson());
 
+  /// Restores an entry from a string previously returned by [encode].
   static FeedbackEntry decode(String source) =>
       FeedbackEntry.fromJson(jsonDecode(source) as Map<String, dynamic>);
 

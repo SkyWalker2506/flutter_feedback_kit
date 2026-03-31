@@ -7,5 +7,6 @@ export 'src/data/backends/queued_backend.dart';
 export 'src/data/queue/shared_prefs_queue.dart';
 export 'src/services/connectivity_service.dart';
 export 'src/services/speech_recognition_service.dart';
+export 'src/presentation/feedback_theme.dart';
 export 'src/presentation/feedback_widget.dart';
 export 'src/presentation/feedback_button.dart';

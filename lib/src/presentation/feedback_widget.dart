@@ -8,7 +8,24 @@ import '../domain/entities/feedback_category.dart';
 import '../domain/entities/feedback_entry.dart';
 import '../domain/repositories/feedback_backend.dart';
 import '../services/speech_recognition_service.dart';
+import 'feedback_theme.dart';
 
+/// An inline form widget for collecting user feedback.
+///
+/// Provides category selection, free-text input with optional voice dictation,
+/// and screenshot attachment (gallery or screen capture). Submits via a
+/// pluggable [FeedbackBackend].
+///
+/// For a ready-to-use floating action button that opens this form in a bottom
+/// sheet, see [FeedbackButton].
+///
+/// ```dart
+/// FeedbackWidget(
+///   backend: WebhookBackend(url: 'https://example.com/feedback'),
+///   appVersion: '1.0.0',
+///   onSuccess: () => Navigator.pop(context),
+/// )
+/// ```
 class FeedbackWidget extends StatefulWidget {
   const FeedbackWidget({
     super.key,
@@ -28,28 +45,55 @@ class FeedbackWidget extends StatefulWidget {
     this.onCaptureScreenshot,
   });
 
+  /// The backend that receives the submitted [FeedbackEntry].
   final FeedbackBackend backend;
+
+  /// Application version string embedded in every submission.
   final String appVersion;
+
+  /// Called after a successful submission.
   final VoidCallback? onSuccess;
+
+  /// Called when submission fails, with the thrown error as argument.
   final void Function(Object error)? onError;
+
+  /// Maximum number of characters allowed in the message field. Default: 2000.
   final int maxMessageLength;
 
-  /// Maximum screenshots that can be attached (default: 5).
+  /// Maximum number of screenshots that can be attached. Default: 5.
   final int maxScreenshots;
 
+  /// Categories shown in the dropdown.
+  ///
+  /// Defaults to all [FeedbackCategory] values when `null`.
   final List<FeedbackCategory>? categories;
+
+  /// Label of the submit button. Default: `'Send Feedback'`.
   final String submitLabel;
+
+  /// Snack-bar message shown after a successful submission.
   final String successMessage;
+
+  /// JPEG quality for gallery images (0–100). Default: 60.
   final int imageQuality;
+
+  /// Maximum width for gallery images in pixels. Default: 800.
   final double maxImageWidth;
+
+  /// Maximum height for gallery images in pixels. Default: 800.
   final double maxImageHeight;
 
-  /// Optional voice-to-text service. When provided, a mic button appears.
+  /// Optional voice-to-text service.
+  ///
+  /// When provided, a microphone button appears in the message field.
+  /// See [SpeechRecognitionService].
   final SpeechRecognitionService? speechService;
 
   /// Optional callback for full-screen capture.
+  ///
   /// Should return the captured PNG bytes, or `null` on cancel/failure.
-  /// When provided, a "Capture Screen" option appears alongside gallery.
+  /// When provided, a "Capture Screen" option appears alongside the gallery
+  /// picker in the screenshot bottom sheet.
   final Future<Uint8List?> Function()? onCaptureScreenshot;
 
   @override
@@ -76,7 +120,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     super.dispose();
   }
 
-  // ─── Input sanitization (ported from VocabApp) ───────────────────────────
+  // ─── Input sanitization ───────────────────────────────────────────────────
 
   String _sanitize(String input) {
     final stripped = input.replaceAll(RegExp(r'[<>]'), '');
@@ -86,7 +130,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
         : trimmed;
   }
 
-  // ─── Voice input ─────────────────────────────────────────────────────────
+  // ─── Voice input ──────────────────────────────────────────────────────────
 
   Future<void> _toggleVoice() async {
     final stt = widget.speechService;
@@ -223,6 +267,8 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final feedbackTheme = FeedbackTheme.of(context);
+
     return Form(
       key: _formKey,
       child: Column(
@@ -277,6 +323,11 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
           const SizedBox(height: 16),
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
+            style: feedbackTheme.submitButtonColor != null
+                ? FilledButton.styleFrom(
+                    backgroundColor: feedbackTheme.submitButtonColor,
+                  )
+                : null,
             child: _isSubmitting
                 ? SizedBox(
                     height: 20,

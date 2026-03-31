@@ -6,8 +6,20 @@ import '../../domain/repositories/feedback_queue.dart';
 const _kQueueKey = 'flutter_feedback_kit_queue';
 
 /// [FeedbackQueue] backed by [SharedPreferences].
-/// Persists entries across app restarts; survives offline periods.
+///
+/// Entries survive app restarts and offline periods. Each entry is stored as
+/// a compact JSON string via [FeedbackEntry.encode] / [FeedbackEntry.decode].
+///
+/// ```dart
+/// final backend = QueuedBackend(
+///   backend: WebhookBackend(url: 'https://example.com/feedback'),
+///   queue: SharedPrefsQueue(),
+/// );
+/// ```
 class SharedPrefsQueue implements FeedbackQueue {
+  /// Creates a [SharedPrefsQueue].
+  ///
+  /// An optional [prefs] override is accepted for testing.
   SharedPrefsQueue({SharedPreferencesAsync? prefs})
       : _prefs = prefs ?? SharedPreferencesAsync();
 
