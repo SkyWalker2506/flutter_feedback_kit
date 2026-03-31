@@ -1,6 +1,6 @@
 name: flutter_feedback_kit_firebase
 description: "Firebase Firestore + Storage backend for flutter_feedback_kit."
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/SkyWalker2506/flutter_feedback_kit
 
 environment:
