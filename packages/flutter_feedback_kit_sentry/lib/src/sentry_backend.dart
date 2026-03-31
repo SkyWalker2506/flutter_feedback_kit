@@ -46,12 +46,17 @@ class SentryFeedbackBackend implements FeedbackBackend {
 
   @override
   Future<void> submit(FeedbackEntry entry) async {
-    final feedback = SentryUserFeedback(
-      eventId: eventId ?? SentryId.newId(),
-      comments: '[${entry.category.label}] ${entry.message}',
+    final feedback = SentryFeedback(
+      message: '[${entry.category}] ${entry.message}',
+      contactEmail: emailResolver?.call() ?? '',
       name: nameResolver?.call() ?? 'Anonymous',
-      email: emailResolver?.call() ?? '',
     );
-    await Sentry.captureUserFeedback(feedback);
+    await Sentry.captureFeedback(
+      feedback,
+      hint: Hint.withMap({'eventId': eventId ?? SentryId.newId()}),
+    );
   }
+
+  @override
+  void dispose() {}
 }

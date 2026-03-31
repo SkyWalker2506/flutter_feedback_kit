@@ -61,7 +61,7 @@ class JiraFeedbackBackend implements FeedbackBackend {
     final summaryText = entry.message.length > 80
         ? entry.message.substring(0, 77) + '...'
         : entry.message;
-    final summary = '[${entry.category.label}] $summaryText';
+    final summary = '[${entry.category}] $summaryText';
 
     final description = _buildDescription(entry);
 
@@ -71,7 +71,7 @@ class JiraFeedbackBackend implements FeedbackBackend {
         'summary': summary,
         'description': description,
         'issuetype': {'name': issueType},
-        'labels': [labelPrefix, entry.category.name],
+        'labels': [labelPrefix, entry.category],
       },
     };
 
@@ -99,7 +99,7 @@ class JiraFeedbackBackend implements FeedbackBackend {
         'type': 'doc',
         'version': 1,
         'content': [
-          _paragraph('Category: ${entry.category.label}'),
+          _paragraph('Category: ${entry.category}'),
           _paragraph('Platform: ${entry.platform}  |  Version: ${entry.appVersion}'),
           if (entry.sessionContext?.userId != null)
             _paragraph('User: ${entry.sessionContext!.userId}'),
