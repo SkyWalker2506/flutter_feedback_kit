@@ -65,6 +65,9 @@ class FirebaseFeedbackBackend implements FeedbackBackend {
     await _firestore.collection(collection).add(payload);
   }
 
+  @override
+  void dispose() {}
+
   Future<List<String>> _uploadScreenshots(FeedbackEntry entry) async {
     final urls = <String>[];
     final timestamp = entry.createdAt.millisecondsSinceEpoch;
