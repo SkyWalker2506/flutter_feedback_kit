@@ -192,6 +192,91 @@ class EsFeedbackLocalizations extends FeedbackLocalizations {
   @override String get annotationUndoTooltip => 'Deshacer';
 }
 
+// ─── Arabic ───────────────────────────────────────────────────────────────────
+
+/// Arabic strings.
+class ArFeedbackLocalizations extends FeedbackLocalizations {
+  const ArFeedbackLocalizations();
+
+  @override String get categoryLabel => 'الفئة';
+  @override String get messageLabel => 'الرسالة';
+  @override String get messagePlaceholder => 'صف ملاحظاتك…';
+  @override String get messageRequired => 'الرسالة مطلوبة';
+  @override String get submitLabel => 'إرسال الملاحظات';
+  @override String get successMessage => 'شكراً على ملاحظاتك!';
+  @override String get queuedMessage =>
+      'تم الحفظ بدون اتصال. سيتم الإرسال عند الاتصال.';
+  @override String get microphoneNotAvailable => 'الميكروفون غير متاح';
+  @override String get screenshotLabel => 'لقطة الشاشة';
+  @override String get captureScreenLabel => 'التقاط الشاشة';
+  @override String get chooseFromGalleryLabel => 'اختر من المعرض';
+  @override String get stopListeningTooltip => 'إيقاف الاستماع';
+  @override String get voiceInputTooltip => 'الإدخال الصوتي';
+  @override String get sendingLabel => 'جارٍ الإرسال، يرجى الانتظار';
+  @override String get ratingLabel => 'كيف تشعر؟';
+  @override String get npsQuestion =>
+      'ما مدى احتمال توصيتك بهذا التطبيق لصديق؟';
+  @override String get annotationSaveLabel => 'حفظ';
+  @override String get annotationDiscardLabel => 'تجاهل';
+  @override String get annotationUndoTooltip => 'تراجع';
+}
+
+// ─── Japanese ─────────────────────────────────────────────────────────────────
+
+/// Japanese strings.
+class JaFeedbackLocalizations extends FeedbackLocalizations {
+  const JaFeedbackLocalizations();
+
+  @override String get categoryLabel => 'カテゴリ';
+  @override String get messageLabel => 'メッセージ';
+  @override String get messagePlaceholder => 'フィードバックを入力してください…';
+  @override String get messageRequired => 'メッセージは必須です';
+  @override String get submitLabel => 'フィードバックを送信';
+  @override String get successMessage => 'フィードバックをありがとうございます！';
+  @override String get queuedMessage =>
+      'オフラインで保存しました。接続時に送信されます。';
+  @override String get microphoneNotAvailable => 'マイクが使用できません';
+  @override String get screenshotLabel => 'スクリーンショット';
+  @override String get captureScreenLabel => '画面をキャプチャ';
+  @override String get chooseFromGalleryLabel => 'ギャラリーから選択';
+  @override String get stopListeningTooltip => '音声入力を停止';
+  @override String get voiceInputTooltip => '音声入力';
+  @override String get sendingLabel => '送信中、しばらくお待ちください';
+  @override String get ratingLabel => 'どう感じますか？';
+  @override String get npsQuestion =>
+      'このアプリを友人に勧める可能性はどのくらいですか？';
+  @override String get annotationSaveLabel => '保存';
+  @override String get annotationDiscardLabel => '破棄';
+  @override String get annotationUndoTooltip => '元に戻す';
+}
+
+// ─── Chinese (Simplified) ─────────────────────────────────────────────────────
+
+/// Chinese Simplified strings.
+class ZhFeedbackLocalizations extends FeedbackLocalizations {
+  const ZhFeedbackLocalizations();
+
+  @override String get categoryLabel => '类别';
+  @override String get messageLabel => '消息';
+  @override String get messagePlaceholder => '请描述您的反馈…';
+  @override String get messageRequired => '消息不能为空';
+  @override String get submitLabel => '提交反馈';
+  @override String get successMessage => '感谢您的反馈！';
+  @override String get queuedMessage => '已离线保存，连接后将自动发送。';
+  @override String get microphoneNotAvailable => '麦克风不可用';
+  @override String get screenshotLabel => '截图';
+  @override String get captureScreenLabel => '截取屏幕';
+  @override String get chooseFromGalleryLabel => '从相册选择';
+  @override String get stopListeningTooltip => '停止录音';
+  @override String get voiceInputTooltip => '语音输入';
+  @override String get sendingLabel => '正在发送，请稍候';
+  @override String get ratingLabel => '您的感受如何？';
+  @override String get npsQuestion => '您向朋友推荐此应用的可能性有多大？';
+  @override String get annotationSaveLabel => '保存';
+  @override String get annotationDiscardLabel => '丢弃';
+  @override String get annotationUndoTooltip => '撤销';
+}
+
 // ─── Delegate ─────────────────────────────────────────────────────────────────
 
 /// [LocalizationsDelegate] for registering flutter_feedback_kit in
@@ -210,6 +295,9 @@ class FeedbackLocalizationsDelegate
     Locale('de'),
     Locale('fr'),
     Locale('es'),
+    Locale('ar'),
+    Locale('ja'),
+    Locale('zh'),
   ];
 
   @override
@@ -223,6 +311,9 @@ class FeedbackLocalizationsDelegate
         'de' => const DeFeedbackLocalizations(),
         'fr' => const FrFeedbackLocalizations(),
         'es' => const EsFeedbackLocalizations(),
+        'ar' => const ArFeedbackLocalizations(),
+        'ja' => const JaFeedbackLocalizations(),
+        'zh' => const ZhFeedbackLocalizations(),
         _ => const EnFeedbackLocalizations(),
       };
 
