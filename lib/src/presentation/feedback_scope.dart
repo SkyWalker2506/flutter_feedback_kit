@@ -96,8 +96,13 @@ class FeedbackScope extends StatefulWidget {
   final Duration notificationDuration;
 
   /// Returns the nearest [FeedbackScopeState], or `null` if none exists.
-  static FeedbackScopeState? maybeOf(BuildContext context) =>
-      context.findAncestorStateOfType<FeedbackScopeState>();
+  ///
+  /// Registers a dependency so the caller rebuilds when capture state changes.
+  static FeedbackScopeState? maybeOf(BuildContext context) {
+    final inherited = context
+        .dependOnInheritedWidgetOfExactType<_FeedbackScopeInherited>();
+    return inherited?.state;
+  }
 
   /// Returns the nearest [FeedbackScopeState].
   ///
@@ -182,9 +187,12 @@ class FeedbackScopeState extends State<FeedbackScope> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Stack(
+    return _FeedbackScopeInherited(
+      state: this,
+      isCaptureActive: _showCaptureOverlay,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Stack(
         fit: StackFit.passthrough,
         children: [
           RepaintBoundary(
@@ -210,9 +218,27 @@ class FeedbackScopeState extends State<FeedbackScope> {
               ),
             ),
         ],
+        ),
       ),
     );
   }
+}
+
+// ─── InheritedWidget ─────────────────────────────────────────────────────────
+
+class _FeedbackScopeInherited extends InheritedWidget {
+  const _FeedbackScopeInherited({
+    required this.state,
+    required this.isCaptureActive,
+    required super.child,
+  });
+
+  final FeedbackScopeState state;
+  final bool isCaptureActive;
+
+  @override
+  bool updateShouldNotify(_FeedbackScopeInherited old) =>
+      isCaptureActive != old.isCaptureActive;
 }
 
 // ─── Capture overlay ─────────────────────────────────────────────────────────
@@ -274,12 +300,12 @@ class _CaptureOverlayState extends State<_CaptureOverlay>
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: Alignment.center,
-                    radius: 1.2,
+                    radius: 0.8,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.5),
+                      Colors.black.withValues(alpha: 0.85),
                     ],
-                    stops: const [0.5, 1.0],
+                    stops: const [0.6, 1.0],
                   ),
                 ),
               ),

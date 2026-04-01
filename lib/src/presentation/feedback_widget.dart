@@ -61,6 +61,9 @@ class FeedbackWidget extends StatefulWidget {
     this.sessionContextBuilder,
     this.showRating = false,
     this.showNps = false,
+    this.isRatingRequired = false,
+    this.isNpsRequired = false,
+    this.isMessageRequired = true,
     this.localizations,
     this.middlewares = const [],
     this.initialFormData,
@@ -152,6 +155,15 @@ class FeedbackWidget extends StatefulWidget {
   /// Show an NPS (0–10) row. Default: `false`.
   final bool showNps;
 
+  /// Whether the rating field is required. Default: `false`.
+  final bool isRatingRequired;
+
+  /// Whether the NPS field is required. Default: `false`.
+  final bool isNpsRequired;
+
+  /// Whether the message field is required. Default: `true`.
+  final bool isMessageRequired;
+
   /// Custom localisation strings. Falls back to [FeedbackLocalizations.of]
   /// from the widget tree, then [EnFeedbackLocalizations].
   final FeedbackLocalizations? localizations;
@@ -195,6 +207,8 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   int? _rating;
   int? _npsScore;
   bool _submitted = false;
+  String? _ratingError;
+  String? _npsError;
 
   List<FeedbackCategoryItem> get _categories =>
       widget.categories ?? FeedbackCategoryItem.builtIns;
@@ -365,7 +379,27 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   // ─── Submit ───────────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final l10n = _l10n;
+    bool hasError = !_formKey.currentState!.validate();
+
+    String? ratingErr;
+    String? npsErr;
+
+    if (widget.showRating && widget.isRatingRequired && _rating == null) {
+      ratingErr = l10n.ratingRequired;
+      hasError = true;
+    }
+    if (widget.showNps && widget.isNpsRequired && _npsScore == null) {
+      npsErr = l10n.npsRequired;
+      hasError = true;
+    }
+
+    setState(() {
+      _ratingError = ratingErr;
+      _npsError = npsErr;
+    });
+
+    if (hasError) return;
 
     setState(() => _isSubmitting = true);
 
@@ -468,16 +502,44 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             FeedbackRatingWidget(
               label: l10n.ratingLabel,
               initialRating: _rating,
-              onRatingChanged: (v) => setState(() => _rating = v),
+              onRatingChanged: (v) => setState(() {
+                _rating = v;
+                _ratingError = null;
+              }),
             ),
+            if (_ratingError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _ratingError!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
           ],
           if (widget.showNps) ...[
             FeedbackNpsWidget(
               question: l10n.npsQuestion,
               initialScore: _npsScore,
-              onScoreChanged: (v) => setState(() => _npsScore = v),
+              onScoreChanged: (v) => setState(() {
+                _npsScore = v;
+                _npsError = null;
+              }),
             ),
+            if (_npsError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _npsError!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
           ],
           DropdownButtonFormField<FeedbackCategoryItem>(
@@ -513,7 +575,9 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                   : null,
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return l10n.messageRequired;
+              if (widget.isMessageRequired && (v == null || v.trim().isEmpty)) {
+                return l10n.messageRequired;
+              }
               return null;
             },
           ),

@@ -59,6 +59,9 @@ class FeedbackButton extends StatelessWidget {
     this.sessionContextBuilder,
     this.showRating = false,
     this.showNps = false,
+    this.isRatingRequired = false,
+    this.isNpsRequired = false,
+    this.isMessageRequired = true,
     this.localizations,
     this.trigger,
     this.middlewares = const [],
@@ -110,6 +113,15 @@ class FeedbackButton extends StatelessWidget {
 
   /// Show NPS (0–10) row. Default: `false`.
   final bool showNps;
+
+  /// Whether the rating field is required. Default: `false`.
+  final bool isRatingRequired;
+
+  /// Whether the NPS field is required. Default: `false`.
+  final bool isNpsRequired;
+
+  /// Whether the message field is required. Default: `true`.
+  final bool isMessageRequired;
 
   final FeedbackLocalizations? localizations;
 
@@ -197,6 +209,9 @@ class FeedbackButton extends StatelessWidget {
               sessionContextBuilder: sessionContextBuilder,
               showRating: showRating,
               showNps: showNps,
+              isRatingRequired: isRatingRequired,
+              isNpsRequired: isNpsRequired,
+              isMessageRequired: isMessageRequired,
               localizations: localizations,
               middlewares: middlewares,
             ),
