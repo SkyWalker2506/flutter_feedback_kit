@@ -230,10 +230,9 @@ class FeedbackButton extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return FloatingActionButton.extended(
+    return FloatingActionButton.small(
       onPressed: () => _open(context),
-      icon: const Icon(Icons.feedback_outlined),
-      label: child ?? const Text('Feedback'),
+      child: child ?? const Icon(Icons.feedback_outlined, size: 20),
     );
   }
 }
