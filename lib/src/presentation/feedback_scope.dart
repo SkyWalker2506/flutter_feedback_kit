@@ -262,51 +262,89 @@ class _CaptureOverlayState extends State<_CaptureOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).padding.bottom + 32;
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottom),
-        child: SlideTransition(
-          position: _slideAnimation,
+    final bottom = MediaQuery.of(context).padding.bottom + 24;
+    return Stack(
+      children: [
+        // Vignette overlay
+        Positioned.fill(
           child: FadeTransition(
             opacity: _fadeAnimation,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton.small(
-                  heroTag: '_ffk_capture_cancel',
-                  onPressed: widget.onCancel,
-                  backgroundColor: Colors.black54,
-                  child: const Icon(Icons.close, color: Colors.white),
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 1.2,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.5),
+                    ],
+                    stops: const [0.5, 1.0],
+                  ),
                 ),
-                const SizedBox(width: 24),
-                FloatingActionButton.large(
-                  heroTag: '_ffk_capture',
-                  onPressed: _capturing
-                      ? null
-                      : () {
-                          setState(() => _capturing = true);
-                          widget.onCapture();
-                        },
-                  backgroundColor: Colors.redAccent,
-                  child: _capturing
-                      ? const SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.camera_alt,
-                          color: Colors.white, size: 32),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        // Capture controls
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: bottom),
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: FloatingActionButton(
+                        heroTag: '_ffk_capture_cancel',
+                        mini: true,
+                        onPressed: widget.onCancel,
+                        backgroundColor: Colors.black54,
+                        elevation: 2,
+                        child:
+                            const Icon(Icons.close, color: Colors.white, size: 16),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: FloatingActionButton(
+                        heroTag: '_ffk_capture',
+                        onPressed: _capturing
+                            ? null
+                            : () {
+                                setState(() => _capturing = true);
+                                widget.onCapture();
+                              },
+                        backgroundColor: Colors.redAccent,
+                        elevation: 4,
+                        child: _capturing
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.camera_alt,
+                                color: Colors.white, size: 22),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
