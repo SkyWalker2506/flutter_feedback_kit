@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import '../i18n/feedback_localizations.dart';
 import '../services/feedback_trigger.dart';
 import '../services/metadata_collector.dart';
 import '../services/speech_recognition_service.dart';
+import 'feedback_scope.dart';
 import 'feedback_theme.dart';
 import 'feedback_widget.dart';
 
@@ -129,61 +131,105 @@ class FeedbackButton extends StatelessWidget {
     }
 
     if (!context.mounted) return;
+
+    final scope = FeedbackScope.maybeOf(context);
+    final useInteractiveCapture = scope != null && onCaptureScreenshot == null;
     final effectiveTheme = theme ?? const FeedbackThemeData();
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: effectiveTheme.backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: effectiveTheme.sheetBorderRadius,
-      ),
-      builder: (_) => FeedbackTheme(
-        data: effectiveTheme,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            effectiveTheme.contentPadding.left,
-            effectiveTheme.contentPadding.top,
-            effectiveTheme.contentPadding.right,
-            MediaQuery.of(context).viewInsets.bottom +
-                effectiveTheme.contentPadding.bottom,
-          ),
-          child: FeedbackWidget(
-            backend: backend,
-            appVersion: appVersion,
-            onSuccess: () {
-              Navigator.pop(context);
-              onSuccess?.call();
-            },
-            onError: onError,
-            onQueued: onQueued,
-            categories: categories,
-            maxMessageLength: maxMessageLength,
-            maxScreenshots: maxScreenshots,
-            submitLabel: submitLabel,
-            successMessage: successMessage,
-            queuedMessage: queuedMessage,
-            imageQuality: imageQuality,
-            maxImageWidth: maxImageWidth,
-            maxImageHeight: maxImageHeight,
-            speechService: speechService,
-            onCaptureScreenshot: onCaptureScreenshot,
-            autoCapture: autoCapture,
-            analytics: analytics,
-            metadataCollector: metadataCollector,
-            sessionContextBuilder: sessionContextBuilder,
-            showRating: showRating,
-            showNps: showNps,
-            localizations: localizations,
-            middlewares: middlewares,
+    FeedbackFormData? formData;
+
+    while (context.mounted) {
+      FeedbackFormData? captureRequestData;
+
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: effectiveTheme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: effectiveTheme.sheetBorderRadius,
+        ),
+        builder: (sheetCtx) => FeedbackTheme(
+          data: effectiveTheme,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              effectiveTheme.contentPadding.left,
+              effectiveTheme.contentPadding.top,
+              effectiveTheme.contentPadding.right,
+              MediaQuery.of(context).viewInsets.bottom +
+                  effectiveTheme.contentPadding.bottom,
+            ),
+            child: FeedbackWidget(
+              backend: backend,
+              appVersion: appVersion,
+              initialFormData: formData,
+              onRequestInteractiveCapture: useInteractiveCapture
+                  ? (data) {
+                      captureRequestData = data;
+                      Navigator.pop(sheetCtx);
+                    }
+                  : null,
+              onSuccess: () {
+                Navigator.pop(sheetCtx);
+                if (scope != null && scope.widget.showNotificationOnSuccess) {
+                  final l10n =
+                      localizations ?? const EnFeedbackLocalizations();
+                  scope.showSuccessNotification(
+                      successMessage ?? l10n.successMessage);
+                }
+                onSuccess?.call();
+              },
+              onError: onError,
+              onQueued: onQueued,
+              categories: categories,
+              maxMessageLength: maxMessageLength,
+              maxScreenshots: maxScreenshots,
+              submitLabel: submitLabel,
+              successMessage: successMessage,
+              queuedMessage: queuedMessage,
+              imageQuality: imageQuality,
+              maxImageWidth: maxImageWidth,
+              maxImageHeight: maxImageHeight,
+              speechService: speechService,
+              onCaptureScreenshot: onCaptureScreenshot,
+              autoCapture: formData == null && autoCapture,
+              analytics: analytics,
+              metadataCollector: metadataCollector,
+              sessionContextBuilder: sessionContextBuilder,
+              showRating: showRating,
+              showNps: showNps,
+              localizations: localizations,
+              middlewares: middlewares,
+            ),
           ),
         ),
-      ),
-    );
+      );
+
+      // Interactive capture requested — run it then re-open the form.
+      if (captureRequestData != null && scope != null && context.mounted) {
+        final savedData = captureRequestData!;
+        final bytes = await scope.startInteractiveCapture();
+        formData = bytes != null
+            ? savedData.copyWith(
+                screenshots: [
+                  ...savedData.screenshots,
+                  base64Encode(bytes),
+                ],
+              )
+            : savedData;
+        continue;
+      }
+
+      break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final scope = FeedbackScope.maybeOf(context);
+    if (scope != null && scope.isCaptureActive) {
+      return const SizedBox.shrink();
+    }
+
     return FloatingActionButton.extended(
       onPressed: () => _open(context),
       icon: const Icon(Icons.feedback_outlined),
