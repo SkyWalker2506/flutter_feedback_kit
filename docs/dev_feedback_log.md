@@ -10,10 +10,12 @@ Issues found and fixed during manual testing with `feedback_tester`.
 | 2 | 2026-04-01 | DevFileBackend uses dart:io, crashes on web | Created _LocalBackend with SharedPreferences for tester | ff289c1 |
 | 3 | 2026-04-01 | FeedbackButton (extended FAB) too large and intrusive | Changed to FloatingActionButton.small | ff289c1 |
 | 4 | 2026-04-01 | Feedback FAB visible during capture mode — clutters screen | Hide FeedbackButton when `isCaptureActive` | ff289c1 |
-| 5 | 2026-04-01 | FeedbackButton doesn't reappear after capture ends — StatelessWidget not rebuilding | Added InheritedWidget (_FeedbackScopeInherited) for reactive rebuilds | pending |
-| 6 | 2026-04-01 | Rating/NPS have no "unselected" state — users may submit accidental ratings | Already null by default; added `isRatingRequired`/`isNpsRequired` validation with error messages | pending |
+| 5 | 2026-04-01 | FeedbackButton doesn't reappear after capture ends — StatelessWidget not rebuilding | Added InheritedWidget (_FeedbackScopeInherited) for reactive rebuilds | 0e13876 |
+| 6 | 2026-04-01 | Rating/NPS have no "unselected" state — users may submit accidental ratings | Already null by default; added `isRatingRequired`/`isNpsRequired` validation with error messages | 0e13876 |
 | 7 | 2026-04-01 | No vignette effect in capture mode — unclear that capture is active | Added RadialGradient vignette overlay during capture | 076599d |
+| 8 | 2026-04-01 | Vignette radial, ortayı etkiliyor — kırmızı köşe çerçevesi istendi | Replaced radial gradient with _CornerFramePainter (red L-brackets) | pending |
 
 ## Open
 
-_None currently._
+| # | Date | Issue |
+|---|------|-------|

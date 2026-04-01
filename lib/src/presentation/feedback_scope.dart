@@ -291,23 +291,13 @@ class _CaptureOverlayState extends State<_CaptureOverlay>
     final bottom = MediaQuery.of(context).padding.bottom + 24;
     return Stack(
       children: [
-        // Vignette overlay
+        // Corner frame overlay
         Positioned.fill(
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.8,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.85),
-                    ],
-                    stops: const [0.6, 1.0],
-                  ),
-                ),
+              child: CustomPaint(
+                painter: _CornerFramePainter(),
               ),
             ),
           ),
@@ -472,4 +462,39 @@ class _SuccessNotificationState extends State<_SuccessNotification>
       ),
     );
   }
+}
+
+// ─── Corner frame painter ─────────────────────────────────────────────────────
+
+class _CornerFramePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.redAccent
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.square;
+
+    const margin = 20.0;
+    const length = 36.0;
+
+    // Top-left
+    canvas.drawLine(Offset(margin, margin + length), Offset(margin, margin), paint);
+    canvas.drawLine(Offset(margin, margin), Offset(margin + length, margin), paint);
+
+    // Top-right
+    canvas.drawLine(Offset(size.width - margin - length, margin), Offset(size.width - margin, margin), paint);
+    canvas.drawLine(Offset(size.width - margin, margin), Offset(size.width - margin, margin + length), paint);
+
+    // Bottom-left
+    canvas.drawLine(Offset(margin, size.height - margin - length), Offset(margin, size.height - margin), paint);
+    canvas.drawLine(Offset(margin, size.height - margin), Offset(margin + length, size.height - margin), paint);
+
+    // Bottom-right
+    canvas.drawLine(Offset(size.width - margin - length, size.height - margin), Offset(size.width - margin, size.height - margin), paint);
+    canvas.drawLine(Offset(size.width - margin, size.height - margin), Offset(size.width - margin, size.height - margin - length), paint);
+  }
+
+  @override
+  bool shouldRepaint(_CornerFramePainter _) => false;
 }
