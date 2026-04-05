@@ -1,30 +1,44 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/feedback_entry.dart';
 import '../../domain/repositories/feedback_backend.dart';
+import 'local_feedback_backend_io.dart'
+    if (dart.library.html) 'local_feedback_backend_web.dart' as impl;
 
 /// A debug-only [FeedbackBackend] that saves feedback as JSON + PNG files
-/// to the given [directory]. Intended for emulator/simulator testing only.
+/// to the given [directoryPath]. Intended for emulator/simulator/desktop
+/// testing only.
+///
+/// **Not supported on web.** On web platforms, [submit] throws an
+/// [UnsupportedError]. Use [WebhookBackend] instead.
 ///
 /// Usage:
 /// ```dart
 /// LocalFeedbackBackend(
-///   directory: Directory('/path/to/feedback'),
+///   directoryPath: '/path/to/feedback',
 /// )
 /// ```
 class LocalFeedbackBackend implements FeedbackBackend {
-  LocalFeedbackBackend({required this.directory});
+  LocalFeedbackBackend({required this.directoryPath});
 
-  final Directory directory;
+  /// Path to the root directory where feedback files are written.
+  final String directoryPath;
+
+  /// Whether this backend is supported on the current platform.
+  static bool get isSupported => !kIsWeb;
 
   @override
   Future<void> submit(FeedbackEntry entry) async {
-    assert(kDebugMode, 'LocalFeedbackBackend must only be used in debug mode');
+    if (kIsWeb) {
+      throw UnsupportedError(
+        'LocalFeedbackBackend is not supported on web. '
+        'Use WebhookBackend or another network-based backend instead.',
+      );
+    }
 
-    await directory.create(recursive: true);
+    assert(kDebugMode, 'LocalFeedbackBackend must only be used in debug mode');
 
     // e.g. 2026-03-31T14-30-00-000_bug
     final ts = entry.createdAt
@@ -33,13 +47,9 @@ class LocalFeedbackBackend implements FeedbackBackend {
         .replaceAll('.', '-');
     final id = '${ts}_${entry.category}';
 
-    // Save each screenshot as a PNG file
     final screenshotFileNames = <String>[];
     for (var i = 0; i < entry.screenshots.length; i++) {
-      final name = '${id}_ss${i + 1}.png';
-      await File('${directory.path}/$name')
-          .writeAsBytes(base64Decode(entry.screenshots[i]));
-      screenshotFileNames.add(name);
+      screenshotFileNames.add('${id}_ss${i + 1}.png');
     }
 
     // Save JSON (filenames, not base64 blobs)
@@ -51,11 +61,16 @@ class LocalFeedbackBackend implements FeedbackBackend {
       'createdAt': entry.createdAt.toIso8601String(),
       'screenshots': screenshotFileNames,
     };
-    await File('${directory.path}/$id.json')
-        .writeAsString(const JsonEncoder.withIndent('  ').convert(json));
+
+    await impl.writeLocalFeedback(
+      directoryPath: directoryPath,
+      id: id,
+      jsonContent: const JsonEncoder.withIndent('  ').convert(json),
+      screenshotBytes: entry.screenshots.map(base64Decode).toList(),
+    );
 
     debugPrint(
-      '[FeedbackKit] 📋 $id.json | '
+      '[FeedbackKit] $id.json | '
       '${entry.category} | '
       '${entry.screenshots.length} screenshot(s)',
     );

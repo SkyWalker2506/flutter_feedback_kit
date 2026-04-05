@@ -1,8 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/feedback_entry.dart';
 import '../../domain/repositories/feedback_backend.dart';
+import 'dev_file_backend_io.dart'
+    if (dart.library.html) 'dev_file_backend_web.dart' as impl;
 
 /// A [FeedbackBackend] that writes feedback to the local filesystem.
 ///
@@ -13,6 +16,10 @@ import '../../domain/repositories/feedback_backend.dart';
 /// Designed for development workflows where an AI assistant or developer
 /// reads feedback directly from the device filesystem.
 ///
+/// **Not supported on web.** On web platforms, [submit] throws an
+/// [UnsupportedError]. Use [WebhookBackend] or another network-based
+/// backend instead.
+///
 /// ```dart
 /// final backend = DevFileBackend(directory: '/sdcard/Download/dev_feedback');
 /// ```
@@ -22,15 +29,23 @@ class DevFileBackend implements FeedbackBackend {
   /// Root directory where feedback folders are created.
   final String directory;
 
+  /// Whether this backend is supported on the current platform.
+  static bool get isSupported => !kIsWeb;
+
   @override
   Future<void> submit(FeedbackEntry entry) async {
+    if (kIsWeb) {
+      throw UnsupportedError(
+        'DevFileBackend is not supported on web. '
+        'Use WebhookBackend or another network-based backend instead.',
+      );
+    }
+
     final ts = entry.createdAt
         .toIso8601String()
         .replaceAll(':', '-')
         .split('.')
         .first;
-    final dir = Directory('$directory/$ts');
-    await dir.create(recursive: true);
 
     // Write human-readable feedback text
     final buf = StringBuffer()
@@ -75,13 +90,12 @@ class DevFileBackend implements FeedbackBackend {
 
     buf.writeln('Screenshots: ${entry.screenshots.length}');
 
-    await File('${dir.path}/feedback.txt').writeAsString(buf.toString());
-
-    // Write screenshots as PNG files
-    for (var i = 0; i < entry.screenshots.length; i++) {
-      final bytes = base64Decode(entry.screenshots[i]);
-      await File('${dir.path}/screenshot_${i + 1}.png').writeAsBytes(bytes);
-    }
+    await impl.writeDevFeedback(
+      directory: directory,
+      timestamp: ts,
+      text: buf.toString(),
+      screenshotBytes: entry.screenshots.map(base64Decode).toList(),
+    );
   }
 
   @override
