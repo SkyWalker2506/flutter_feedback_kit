@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feedback_kit/flutter_feedback_kit.dart';
@@ -29,7 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   FeedbackBackend? _backend;
-  Directory? _feedbackDir;
+  String? _feedbackDirPath;
 
   @override
   void initState() {
@@ -38,14 +36,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initBackend() async {
+    // LocalFeedbackBackend is not supported on web — use WebhookBackend there.
+    if (kIsWeb || !kDebugMode) {
+      setState(() {
+        _backend =
+            WebhookBackend(url: 'https://your-webhook-url.example.com/feedback');
+      });
+      return;
+    }
     final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory('${docs.path}/feedback');
-    final backend = kDebugMode
-        ? LocalFeedbackBackend(directory: dir)
-        : WebhookBackend(url: 'https://your-webhook-url.example.com/feedback');
+    final dirPath = '${docs.path}/feedback';
     setState(() {
-      _feedbackDir = dir;
-      _backend = backend;
+      _feedbackDirPath = dirPath;
+      _backend = LocalFeedbackBackend(directoryPath: dirPath);
     });
   }
 
@@ -65,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Feedback Kit Demo'),
         actions: [
-          if (kDebugMode && _feedbackDir != null)
+          if (kDebugMode && !kIsWeb && _feedbackDirPath != null)
             IconButton(
               icon: const Icon(Icons.list_alt_outlined),
               tooltip: 'Feedback Log',
@@ -73,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      FeedbackDevViewer(directory: _feedbackDir!),
+                      FeedbackDevViewer(directoryPath: _feedbackDirPath!),
                 ),
               ),
             ),

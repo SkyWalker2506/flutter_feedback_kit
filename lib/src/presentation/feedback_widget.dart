@@ -16,6 +16,7 @@ import '../services/speech_recognition_service.dart';
 import '../data/backends/queued_backend.dart';
 import 'feedback_nps_widget.dart';
 import 'feedback_rating_widget.dart';
+import 'feedback_scope.dart';
 import 'feedback_theme.dart';
 
 /// An inline form widget for collecting user feedback.
@@ -60,8 +61,13 @@ class FeedbackWidget extends StatefulWidget {
     this.sessionContextBuilder,
     this.showRating = false,
     this.showNps = false,
+    this.isRatingRequired = false,
+    this.isNpsRequired = false,
+    this.isMessageRequired = true,
     this.localizations,
     this.middlewares = const [],
+    this.initialFormData,
+    this.onRequestInteractiveCapture,
   });
 
   /// The backend that receives the submitted [FeedbackEntry].
@@ -149,6 +155,15 @@ class FeedbackWidget extends StatefulWidget {
   /// Show an NPS (0–10) row. Default: `false`.
   final bool showNps;
 
+  /// Whether the rating field is required. Default: `false`.
+  final bool isRatingRequired;
+
+  /// Whether the NPS field is required. Default: `false`.
+  final bool isNpsRequired;
+
+  /// Whether the message field is required. Default: `true`.
+  final bool isMessageRequired;
+
   /// Custom localisation strings. Falls back to [FeedbackLocalizations.of]
   /// from the widget tree, then [EnFeedbackLocalizations].
   final FeedbackLocalizations? localizations;
@@ -168,6 +183,16 @@ class FeedbackWidget extends StatefulWidget {
   /// ```
   final List<FeedbackMiddleware> middlewares;
 
+  /// Initial form state for restoring the form after interactive capture.
+  final FeedbackFormData? initialFormData;
+
+  /// Called when the user requests interactive screenshot capture.
+  ///
+  /// Receives the current form state so it can be restored when the form
+  /// re-opens. When set, "Capture Screen" triggers the interactive flow
+  /// instead of [onCaptureScreenshot].
+  final ValueChanged<FeedbackFormData>? onRequestInteractiveCapture;
+
   @override
   State<FeedbackWidget> createState() => _FeedbackWidgetState();
 }
@@ -182,6 +207,8 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   int? _rating;
   int? _npsScore;
   bool _submitted = false;
+  String? _ratingError;
+  String? _npsError;
 
   List<FeedbackCategoryItem> get _categories =>
       widget.categories ?? FeedbackCategoryItem.builtIns;
@@ -196,6 +223,20 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   void initState() {
     super.initState();
     _selectedCategory = _categories.first;
+
+    // Restore form state if provided (e.g. after interactive capture).
+    final initial = widget.initialFormData;
+    if (initial != null) {
+      _messageController.text = initial.message ?? '';
+      if (initial.categoryId != null) {
+        final match = _categories.where((c) => c.id == initial.categoryId);
+        if (match.isNotEmpty) _selectedCategory = match.first;
+      }
+      _screenshots.addAll(initial.screenshots);
+      _rating = initial.rating;
+      _npsScore = initial.npsScore;
+    }
+
     widget.analytics?.onFeedbackShown();
     if (widget.autoCapture && widget.onCaptureScreenshot != null) {
       WidgetsBinding.instance
@@ -286,6 +327,16 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     widget.analytics?.onScreenshotAdded(_screenshots.length);
   }
 
+  void _requestInteractiveCapture() {
+    widget.onRequestInteractiveCapture!(FeedbackFormData(
+      message: _messageController.text,
+      categoryId: _selectedCategory.id,
+      screenshots: List.unmodifiable(_screenshots),
+      rating: _rating,
+      npsScore: _npsScore,
+    ));
+  }
+
   void _showScreenshotOptions() {
     showModalBottomSheet<void>(
       context: context,
@@ -301,7 +352,16 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                 _pickFromGallery();
               },
             ),
-            if (widget.onCaptureScreenshot != null)
+            if (widget.onRequestInteractiveCapture != null)
+              ListTile(
+                leading: const Icon(Icons.screenshot_outlined),
+                title: Text(_l10n.captureScreenLabel),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _requestInteractiveCapture();
+                },
+              )
+            else if (widget.onCaptureScreenshot != null)
               ListTile(
                 leading: const Icon(Icons.screenshot_outlined),
                 title: Text(_l10n.captureScreenLabel),
@@ -319,7 +379,27 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   // ─── Submit ───────────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final l10n = _l10n;
+    bool hasError = !_formKey.currentState!.validate();
+
+    String? ratingErr;
+    String? npsErr;
+
+    if (widget.showRating && widget.isRatingRequired && _rating == null) {
+      ratingErr = l10n.ratingRequired;
+      hasError = true;
+    }
+    if (widget.showNps && widget.isNpsRequired && _npsScore == null) {
+      npsErr = l10n.npsRequired;
+      hasError = true;
+    }
+
+    setState(() {
+      _ratingError = ratingErr;
+      _npsError = npsErr;
+    });
+
+    if (hasError) return;
 
     setState(() => _isSubmitting = true);
 
@@ -422,16 +502,44 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             FeedbackRatingWidget(
               label: l10n.ratingLabel,
               initialRating: _rating,
-              onRatingChanged: (v) => setState(() => _rating = v),
+              onRatingChanged: (v) => setState(() {
+                _rating = v;
+                _ratingError = null;
+              }),
             ),
+            if (_ratingError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _ratingError!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
           ],
           if (widget.showNps) ...[
             FeedbackNpsWidget(
               question: l10n.npsQuestion,
               initialScore: _npsScore,
-              onScoreChanged: (v) => setState(() => _npsScore = v),
+              onScoreChanged: (v) => setState(() {
+                _npsScore = v;
+                _npsError = null;
+              }),
             ),
+            if (_npsError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _npsError!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
           ],
           DropdownButtonFormField<FeedbackCategoryItem>(
@@ -467,7 +575,9 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                   : null,
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return l10n.messageRequired;
+              if (widget.isMessageRequired && (v == null || v.trim().isEmpty)) {
+                return l10n.messageRequired;
+              }
               return null;
             },
           ),
@@ -476,9 +586,15 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             screenshots: _screenshots,
             canAdd: _canAddScreenshot,
             screenshotLabel: l10n.screenshotLabel,
-            onAdd: widget.onCaptureScreenshot != null
+            onAdd: widget.onRequestInteractiveCapture != null
                 ? _showScreenshotOptions
-                : _pickFromGallery,
+                : widget.onCaptureScreenshot != null
+                    ? _captureScreen
+                    : _pickFromGallery,
+            onLongPress: widget.onRequestInteractiveCapture != null ||
+                    widget.onCaptureScreenshot != null
+                ? _showScreenshotOptions
+                : null,
             onRemove: (i) => setState(() => _screenshots.removeAt(i)),
           ),
           const SizedBox(height: 16),
@@ -514,6 +630,7 @@ class _ScreenshotRow extends StatelessWidget {
     required this.canAdd,
     required this.screenshotLabel,
     required this.onAdd,
+    this.onLongPress,
     required this.onRemove,
   });
 
@@ -521,6 +638,7 @@ class _ScreenshotRow extends StatelessWidget {
   final bool canAdd;
   final String screenshotLabel;
   final VoidCallback onAdd;
+  final VoidCallback? onLongPress;
   final void Function(int) onRemove;
 
   @override
@@ -563,10 +681,13 @@ class _ScreenshotRow extends StatelessWidget {
           );
         }),
         if (canAdd)
-          OutlinedButton.icon(
-            onPressed: onAdd,
-            icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
-            label: Text(screenshotLabel),
+          GestureDetector(
+            onLongPress: onLongPress,
+            child: OutlinedButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+              label: Text(screenshotLabel),
+            ),
           ),
       ],
     );

@@ -1,3 +1,16 @@
+## 0.2.0 (Unreleased) — Web & Desktop Support
+
+### Breaking Changes
+- `LocalFeedbackBackend(directory: Directory)` → `LocalFeedbackBackend(directoryPath: String)` — removes `dart:io` from the public API
+- `FeedbackDevViewer(directory: Directory)` → `FeedbackDevViewer(directoryPath: String)` — removes `dart:io` from the public API
+
+### Features
+- Web and desktop platforms now compile without errors
+- `DevFileBackend`, `LocalFeedbackBackend`, and `FeedbackDevViewer` gracefully report `UnsupportedError` on web via conditional imports
+- `DevFileBackend.isSupported` and `LocalFeedbackBackend.isSupported` static getters for runtime checks
+
+---
+
 ## 0.1.2
 
 - Fix pubspec topics (max 5 allowed)

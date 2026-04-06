@@ -1,0 +1,24 @@
+# .claudeignore
+node_modules/
+vendor/
+.pub-cache/
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+*.freezed.dart
+*.gr.dart
+pubspec.lock
+.gradle/
+.idea/
+.vscode/
+*.DS_Store
+*.log
+coverage/
+*.pem
+*.key
+*.mp4
+*.mp3
+*.zip
+*.tar.gz
