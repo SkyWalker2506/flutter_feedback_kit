@@ -1,6 +1,6 @@
 name: flutter_feedback_kit
 description: "In-app user feedback for Flutter — customisable form widget, voice input, offline queue, screenshot capture, and pluggable backends (webhook, Firebase, etc.)."
-version: 0.1.2
+version: 0.2.0
 homepage: https://github.com/SkyWalker2506/flutter_feedback_kit
 
 topics:
@@ -31,5 +31,6 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4
+  shared_preferences_platform_interface: ^2.4.0
 
 flutter:

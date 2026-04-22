@@ -1,4 +1,12 @@
-## 0.2.0 (Unreleased)
+## 0.2.0
+
+### Sprint 10 (Forge Runs 1-3)
+- `PiiSanitizerMiddleware` — redacts email addresses and phone numbers from the feedback message before backend delivery; supports custom regex patterns and replacement strings
+- `flutter_feedback_kit_github` sub-package — creates GitHub Issues via REST API v3 on feedback submission; custom title/body/label support
+- `flutter_feedback_kit_email` sub-package — delivers feedback as SendGrid v3 emails (plain-text + HTML); custom subject/body/htmlBody builders
+- `QueuedBackend.flushQueue` — improved partial flush: successfully delivered entries are removed immediately via `removeAt`, so a partial failure does not re-send already-delivered entries
+- `FeedbackQueue.removeAt` — new interface method for per-entry removal; `SharedPrefsQueue` overrides with O(n) implementation
+- `FeedbackTrigger` — comprehensive unit-test coverage (8 tests); uses `InMemorySharedPreferencesAsync` for isolation
 
 ### Breaking Changes
 - `LocalFeedbackBackend(directory: Directory)` → `LocalFeedbackBackend(directoryPath: String)` — removes `dart:io` from the public API
