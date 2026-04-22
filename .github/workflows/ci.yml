@@ -89,3 +89,43 @@ jobs:
       - name: Test linear sub-package
         working-directory: packages/flutter_feedback_kit_linear
         run: flutter test
+
+  analyze-email:
+    name: Analyze & Test (flutter_feedback_kit_email)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Get root package dependencies
+        run: flutter pub get
+      - name: Get email sub-package dependencies
+        working-directory: packages/flutter_feedback_kit_email
+        run: flutter pub get
+      - name: Analyze email sub-package
+        working-directory: packages/flutter_feedback_kit_email
+        run: flutter analyze
+      - name: Test email sub-package
+        working-directory: packages/flutter_feedback_kit_email
+        run: flutter test
+
+  analyze-github:
+    name: Analyze & Test (flutter_feedback_kit_github)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Get root package dependencies
+        run: flutter pub get
+      - name: Get github sub-package dependencies
+        working-directory: packages/flutter_feedback_kit_github
+        run: flutter pub get
+      - name: Analyze github sub-package
+        working-directory: packages/flutter_feedback_kit_github
+        run: flutter analyze
+      - name: Test github sub-package
+        working-directory: packages/flutter_feedback_kit_github
+        run: flutter test

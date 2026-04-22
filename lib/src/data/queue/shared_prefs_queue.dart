@@ -39,6 +39,14 @@ class SharedPrefsQueue implements FeedbackQueue {
   }
 
   @override
+  Future<void> removeAt(int index) async {
+    final raw = await _readRaw();
+    if (index < 0 || index >= raw.length) return;
+    raw.removeAt(index);
+    await _prefs.setStringList(_kQueueKey, raw);
+  }
+
+  @override
   Future<void> clear() => _prefs.setStringList(_kQueueKey, []);
 
   Future<List<String>> _readRaw() async =>
