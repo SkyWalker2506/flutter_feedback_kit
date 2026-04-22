@@ -84,27 +84,33 @@ void main() {
       expect(sent, 0);
     });
 
-    test('sends all entries and clears queue on full success', () async {
+    test('sends all entries and removes each from queue on full success',
+        () async {
       when(() => queue.pending()).thenAnswer((_) async => [entry, entry]);
       when(() => backend.submit(any())).thenAnswer((_) async {});
-      when(() => queue.clear()).thenAnswer((_) async {});
+      when(() => queue.removeAt(any())).thenAnswer((_) async {});
 
       final sent = await makeBackend(online: true).flushQueue();
 
       expect(sent, 2);
-      verify(() => queue.clear()).called(1);
+      // removeAt(0) called once per delivered entry
+      verify(() => queue.removeAt(0)).called(2);
     });
 
-    test('stops at first failure and does not clear queue', () async {
+    test('stops at first failure and only removes successfully delivered entries',
+        () async {
       var callCount = 0;
       when(() => queue.pending()).thenAnswer((_) async => [entry, entry]);
       when(() => backend.submit(any())).thenAnswer((_) async {
         if (++callCount > 1) throw Exception('fail');
       });
+      when(() => queue.removeAt(any())).thenAnswer((_) async {});
 
       final sent = await makeBackend(online: true).flushQueue();
 
       expect(sent, 1);
+      // Only the first entry was delivered and removed
+      verify(() => queue.removeAt(0)).called(1);
       verifyNever(() => queue.clear());
     });
   });

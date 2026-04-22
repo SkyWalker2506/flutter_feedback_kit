@@ -1,0 +1,21 @@
+name: flutter_feedback_kit_email
+description: "SendGrid email backend for flutter_feedback_kit — sends feedback as a formatted email via the SendGrid API."
+version: 0.1.0
+homepage: https://github.com/SkyWalker2506/flutter_feedback_kit
+
+environment:
+  sdk: ^3.11.3
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_feedback_kit:
+    path: ../..
+  http: ^1.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4

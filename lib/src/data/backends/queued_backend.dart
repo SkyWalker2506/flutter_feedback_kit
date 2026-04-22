@@ -73,8 +73,11 @@ class QueuedBackend implements FeedbackBackend {
 
   /// Attempts to deliver all queued entries via the underlying backend.
   ///
-  /// Stops at the first failure and preserves remaining entries for the next
-  /// attempt. Clears the queue only when **all** entries are sent successfully.
+  /// Successfully delivered entries are removed from the queue immediately,
+  /// so a partial flush (e.g. backend fails on entry 3 of 5) leaves only the
+  /// undelivered entries in the queue for the next attempt.
+  ///
+  /// Stops at the first failure to avoid reordering entries.
   ///
   /// Returns the number of successfully delivered entries.
   Future<int> flushQueue() async {
@@ -85,18 +88,20 @@ class QueuedBackend implements FeedbackBackend {
     if (entries.isEmpty) return 0;
 
     var sent = 0;
-    for (final entry in entries) {
+    for (var i = 0; i < entries.length; i++) {
       try {
-        await _backend.submit(entry);
+        await _backend.submit(entries[i]);
+        // Remove this entry from the front of the queue.
+        // After each removal the remaining entries shift left by one, so we
+        // always remove at index 0 for the first entry, then index 0 again
+        // for the next (the queue shrinks as we go).
+        await _queue.removeAt(0);
         sent++;
       } catch (_) {
         break;
       }
     }
 
-    if (sent == entries.length) {
-      await _queue.clear();
-    }
     return sent;
   }
 
