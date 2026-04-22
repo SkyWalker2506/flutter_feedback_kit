@@ -195,3 +195,9 @@ Navigator.push(
 | `submitButtonColor` | `Color?` | `ColorScheme.primary` |
 | `contentPadding` | `EdgeInsets` | `EdgeInsets.all(16)` |
 | `sheetBorderRadius` | `BorderRadius` | `vertical(top: Radius.circular(16))` |
+
+## Related
+
+- [SDK Market](https://github.com/SkyWalker2506/sdk-market) — browse and install all kits with one command
+- [flutter_quiz_kit](https://github.com/SkyWalker2506/flutter_quiz_kit) — quiz engine for Flutter
+- [flutter_tutorial_kit](https://github.com/SkyWalker2506/flutter_tutorial_kit) — in-app tutorial overlay for Flutter

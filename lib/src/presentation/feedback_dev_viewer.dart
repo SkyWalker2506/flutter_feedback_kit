@@ -1,18 +1,24 @@
-import 'dart:convert';
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'feedback_dev_viewer_io.dart'
+    if (dart.library.html) 'feedback_dev_viewer_web.dart' as impl;
 
 /// In-app viewer for feedback saved by [LocalFeedbackBackend].
 /// Add this screen to your debug-only navigation.
 ///
+/// **Not supported on web.** On web platforms this widget shows an
+/// informational placeholder. Use [WebhookBackend] + a server-side viewer
+/// instead.
+///
 /// ```dart
-/// FeedbackDevViewer(directory: feedbackDir)
+/// FeedbackDevViewer(directoryPath: feedbackDir.path)
 /// ```
 class FeedbackDevViewer extends StatefulWidget {
-  const FeedbackDevViewer({super.key, required this.directory});
+  const FeedbackDevViewer({super.key, required this.directoryPath});
 
-  final Directory directory;
+  /// Absolute path to the directory written by [LocalFeedbackBackend].
+  final String directoryPath;
 
   @override
   State<FeedbackDevViewer> createState() => _FeedbackDevViewerState();
@@ -28,52 +34,51 @@ class _FeedbackDevViewerState extends State<FeedbackDevViewer> {
     _load();
   }
 
-  void _load() {
-    if (!widget.directory.existsSync()) {
-      setState(() {
-        _entries = [];
-        _loaded = true;
-      });
+  Future<void> _load() async {
+    if (kIsWeb) {
+      if (mounted) setState(() => _loaded = true);
       return;
     }
-
-    final files = widget.directory
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))
-        .toList()
-      ..sort((a, b) => b.path.compareTo(a.path)); // newest first
-
-    final entries = <_LocalEntry>[];
-    for (final file in files) {
-      try {
-        final map =
-            jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
-        final ssNames = (map['screenshots'] as List? ?? []).cast<String>();
-        final ssFiles = ssNames
-            .map((n) => File('${widget.directory.path}/$n'))
-            .where((f) => f.existsSync())
-            .toList();
-        entries.add(_LocalEntry(map: map, screenshots: ssFiles, file: file));
-      } catch (_) {}
+    final raw = await impl.loadEntries(widget.directoryPath);
+    if (mounted) {
+      setState(() {
+        _entries = raw.map(_LocalEntry.fromMap).toList();
+        _loaded = true;
+      });
     }
-
-    setState(() {
-      _entries = entries;
-      _loaded = true;
-    });
   }
 
-  void _deleteEntry(_LocalEntry e) {
-    e.file.deleteSync();
-    for (final f in e.screenshots) {
-      if (f.existsSync()) f.deleteSync();
-    }
-    _load();
+  Future<void> _deleteEntry(_LocalEntry e) async {
+    await impl.deleteEntry(widget.directoryPath, e.id);
+    await _load();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Feedback Log')),
+        body: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.web, size: 48, color: Colors.grey),
+              SizedBox(height: 8),
+              Text(
+                'FeedbackDevViewer is not available on web.',
+                style: TextStyle(color: Colors.grey),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Use WebhookBackend + a server-side viewer instead.',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Feedback Log (${_entries.length})'),
@@ -94,23 +99,28 @@ class _FeedbackDevViewerState extends State<FeedbackDevViewer> {
                     children: [
                       Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
                       SizedBox(height: 8),
-                      Text('No feedback yet',
-                          style: TextStyle(color: Colors.grey)),
+                      Text(
+                        'No feedback yet',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ],
                   ),
                 )
               : ListView.separated(
                   itemCount: _entries.length,
-                  separatorBuilder: (context, index) =>
+                  separatorBuilder: ( context, index) =>
                       const Divider(height: 1, indent: 72),
                   itemBuilder: (context, i) => _EntryTile(
                     entry: _entries[i],
+                    directoryPath: widget.directoryPath,
                     onDelete: () => _deleteEntry(_entries[i]),
                     onTap: () => Navigator.push<void>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            _EntryDetailScreen(entry: _entries[i]),
+                        builder: (_) => _EntryDetailScreen(
+                          entry: _entries[i],
+                          directoryPath: widget.directoryPath,
+                        ),
                       ),
                     ),
                   ),
@@ -122,21 +132,23 @@ class _FeedbackDevViewerState extends State<FeedbackDevViewer> {
 // ─── Entry model ─────────────────────────────────────────────────────────────
 
 class _LocalEntry {
-  _LocalEntry({
-    required this.map,
-    required this.screenshots,
-    required this.file,
-  });
+  _LocalEntry.fromMap(Map<String, dynamic> map)
+      : id = map['_id'] as String? ?? '',
+        category = map['category'] as String? ?? '',
+        message = map['message'] as String? ?? '',
+        createdAt = map['createdAt'] as String? ?? '',
+        platform = map['platform'] as String? ?? '',
+        appVersion = map['appVersion'] as String? ?? '',
+        screenshotNames =
+            (map['screenshots'] as List? ?? []).cast<String>();
 
-  final Map<String, dynamic> map;
-  final List<File> screenshots;
-  final File file;
-
-  String get category => map['category'] as String? ?? '';
-  String get message => map['message'] as String? ?? '';
-  String get createdAt => map['createdAt'] as String? ?? '';
-  String get platform => map['platform'] as String? ?? '';
-  String get appVersion => map['appVersion'] as String? ?? '';
+  final String id;
+  final String category;
+  final String message;
+  final String createdAt;
+  final String platform;
+  final String appVersion;
+  final List<String> screenshotNames;
 
   DateTime? get dateTime => DateTime.tryParse(createdAt);
 
@@ -156,11 +168,13 @@ class _LocalEntry {
 class _EntryTile extends StatelessWidget {
   const _EntryTile({
     required this.entry,
+    required this.directoryPath,
     required this.onDelete,
     required this.onTap,
   });
 
   final _LocalEntry entry;
+  final String directoryPath;
   final VoidCallback onDelete;
   final VoidCallback onTap;
 
@@ -170,16 +184,17 @@ class _EntryTile extends StatelessWidget {
       leading: SizedBox(
         width: 48,
         height: 48,
-        child: entry.screenshots.isNotEmpty
+        child: entry.screenshotNames.isNotEmpty
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.file(
-                  entry.screenshots.first,
-                  fit: BoxFit.cover,
-                  semanticLabel: 'Screenshot thumbnail',
-                ),
+                child: impl.buildThumbnail(
+                    directoryPath, entry.screenshotNames.first),
               )
-            : const Icon(Icons.feedback_outlined, size: 32, color: Colors.grey),
+            : const Icon(
+                Icons.feedback_outlined,
+                size: 32,
+                color: Colors.grey,
+              ),
       ),
       title: Row(
         children: [
@@ -192,9 +207,9 @@ class _EntryTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (entry.screenshots.length > 1)
+          if (entry.screenshotNames.length > 1)
             Text(
-              '📎${entry.screenshots.length}',
+              '${entry.screenshotNames.length} imgs',
               style: Theme.of(context).textTheme.bodySmall,
             ),
         ],
@@ -217,9 +232,13 @@ class _EntryTile extends StatelessWidget {
 // ─── Detail screen ───────────────────────────────────────────────────────────
 
 class _EntryDetailScreen extends StatelessWidget {
-  const _EntryDetailScreen({required this.entry});
+  const _EntryDetailScreen({
+    required this.entry,
+    required this.directoryPath,
+  });
 
   final _LocalEntry entry;
+  final String directoryPath;
 
   @override
   Widget build(BuildContext context) {
@@ -243,12 +262,12 @@ class _EntryDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(entry.message, style: theme.textTheme.bodyMedium),
-            if (entry.screenshots.isNotEmpty) ...[
+            if (entry.screenshotNames.isNotEmpty) ...[
               const SizedBox(height: 20),
               const Divider(),
               const SizedBox(height: 12),
               Text(
-                'Screenshots (${entry.screenshots.length})',
+                'Screenshots (${entry.screenshotNames.length})',
                 style: theme.textTheme.labelMedium,
               ),
               const SizedBox(height: 8),
@@ -256,49 +275,16 @@ class _EntryDetailScreen extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final f in entry.screenshots)
-                    GestureDetector(
-                      onTap: () => Navigator.push<void>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => _FullScreenImage(file: f),
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          f,
-                          width: 140,
-                          height: 140,
-                          fit: BoxFit.cover,
-                          semanticLabel: 'Screenshot',
-                        ),
-                      ),
+                  for (final name in entry.screenshotNames)
+                    impl.buildScreenshotPreview(
+                      context,
+                      directoryPath,
+                      name,
                     ),
                 ],
               ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Full-screen image ────────────────────────────────────────────────────────
-
-class _FullScreenImage extends StatelessWidget {
-  const _FullScreenImage({required this.file});
-  final File file;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
-      body: Center(
-        child: InteractiveViewer(
-          child: Image.file(file, semanticLabel: 'Full-size screenshot'),
         ),
       ),
     );

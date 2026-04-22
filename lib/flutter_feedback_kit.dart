@@ -9,9 +9,11 @@ export 'src/domain/repositories/feedback_queue.dart';
 export 'src/domain/feedback_middleware.dart';
 export 'src/domain/middlewares/logging_middleware.dart';
 export 'src/domain/middlewares/ai_categorization_middleware.dart';
+export 'src/domain/middlewares/pii_sanitizer_middleware.dart';
 
 // Data
 export 'src/data/backends/webhook_backend.dart';
+export 'src/data/backends/dev_file_backend.dart';
 export 'src/data/backends/queued_backend.dart';
 export 'src/data/queue/shared_prefs_queue.dart';
 
@@ -30,4 +32,5 @@ export 'src/presentation/feedback_button.dart';
 export 'src/presentation/feedback_nps_widget.dart';
 export 'src/presentation/feedback_rating_widget.dart';
 export 'src/presentation/feedback_theme.dart';
+export 'src/presentation/feedback_scope.dart';
 export 'src/presentation/feedback_widget.dart';

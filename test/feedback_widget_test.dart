@@ -240,7 +240,7 @@ void main() {
   });
 
   group('FeedbackButton', () {
-    testWidgets('renders as FloatingActionButton.extended', (tester) async {
+    testWidgets('renders as small FloatingActionButton', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -254,7 +254,7 @@ void main() {
       );
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
-      expect(find.text('Feedback'), findsOneWidget);
+      expect(find.byIcon(Icons.feedback_outlined), findsOneWidget);
     });
 
     testWidgets('opens bottom sheet with FeedbackWidget on tap',

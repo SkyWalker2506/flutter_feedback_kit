@@ -1,14 +1,8 @@
-## 0.1.2
-
-- Fix pubspec topics (max 5 allowed)
-
-## 0.1.1
-
-- Add MIT license
-- Fix dart doc warnings (0 warnings)
-- Broaden version constraints for device_info_plus and package_info_plus
-
 ## 0.2.0 (Unreleased)
+
+### Breaking Changes
+- `LocalFeedbackBackend(directory: Directory)` → `LocalFeedbackBackend(directoryPath: String)` — removes `dart:io` from the public API
+- `FeedbackDevViewer(directory: Directory)` → `FeedbackDevViewer(directoryPath: String)` — removes `dart:io` from the public API
 
 ### Security
 - `WebhookBackend` now enforces HTTPS-only URLs (`ArgumentError` for HTTP)
@@ -24,21 +18,48 @@
 - `Image.memory` screenshots have `semanticLabel` for screen readers
 - Submit spinner wrapped with `Semantics(label: 'Sending feedback, please wait')`
 
+### Features
+- Web and desktop platforms now compile without errors
+- `DevFileBackend`, `LocalFeedbackBackend`, and `FeedbackDevViewer` gracefully report `UnsupportedError` on web via conditional imports
+- `DevFileBackend.isSupported` and `LocalFeedbackBackend.isSupported` static getters for runtime checks
+- `FeedbackMiddleware` pipeline — compose transformations (logging, PII redaction, AI categorisation) before every submit
+- `AiCategorizationMiddleware` — auto-suggests a category using the Claude API (graceful no-op when key absent)
+- `PiiSanitizerMiddleware` — strips email addresses and phone numbers from the feedback message before delivery
+- `FeedbackNpsWidget` — 0–10 Net Promoter Score row
+- `FeedbackRatingWidget` — 1–5 emoji CSAT row; both fields support required validation
+- `FeedbackTrigger` — smart proactive prompt based on launches / days installed / repeat cadence
+- `FeedbackAnnotationOverlay` — full-screen drawing overlay for annotating screenshots
+- `FeedbackMetadataCollector` — automatically enriches entries with OS, device model, and app info
+- `FeedbackSessionContext` — attach user ID, current route, and custom key-value pairs
+- `FeedbackAnalytics` interface — event callbacks for shown, submitted, dismissed, voice, screenshot, queued
+- `FeedbackLocalizations` with 8 built-in locales (EN, TR, DE, FR, ES, AR, JA, ZH) and a `LocalizationsDelegate`
+- `flutter_feedback_kit_firebase` sub-package — Firestore + Storage backend
+- `flutter_feedback_kit_sentry` sub-package — Sentry `UserFeedback` backend
+- `flutter_feedback_kit_jira` sub-package — Jira Cloud REST API backend
+- `flutter_feedback_kit_linear` sub-package — Linear GraphQL API backend
+- Mason brick (`flutter_feedback_kit`) for instant project scaffolding
+- `LocalFeedbackBackend` — debug-only JSON + PNG file backend
+- `FeedbackDevViewer` — in-app log viewer with list, detail, fullscreen screenshot, delete
+
 ### Architecture
-- Web support: replaced `dart:io` / `Platform.operatingSystem` with `defaultTargetPlatform`
 - `XFile.readAsBytes()` replaces `File(path).readAsBytes()` for cross-platform compatibility
 - `WebhookBackend.dispose()` added to close HTTP client
 - `FeedbackBackend` base class gains no-op `dispose()` method
 - `FeedbackEntry.operator==` and `hashCode` now include `screenshots` list (`listEquals`)
 - GitHub Actions CI workflow added (`flutter analyze && flutter test` on every PR)
-
-### Developer Experience
 - `FeedbackButton` now exposes all `FeedbackWidget` props (categories, labels, image constraints)
-- `LocalFeedbackBackend` — debug-only backend that saves feedback as JSON + PNG files
-- `FeedbackDevViewer` — in-app log viewer with list, detail, fullscreen screenshot, delete
-- Both exported via `package:flutter_feedback_kit/local.dart` (keeps web builds clean)
 
 ---
+
+## 0.1.2
+
+- Fix pubspec topics (max 5 allowed)
+
+## 0.1.1
+
+- Add MIT license
+- Fix dart doc warnings (0 warnings)
+- Broaden version constraints for device_info_plus and package_info_plus
 
 ## 0.1.0
 

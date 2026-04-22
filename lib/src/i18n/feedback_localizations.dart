@@ -49,6 +49,8 @@ abstract class FeedbackLocalizations {
   String get removeScreenshot;
   String get npsNotLikely;
   String get npsVeryLikely;
+  String get ratingRequired;
+  String get npsRequired;
 }
 
 // ─── English ──────────────────────────────────────────────────────────────────
@@ -83,6 +85,8 @@ class EnFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => 'Remove screenshot';
   @override String get npsNotLikely => 'Not likely';
   @override String get npsVeryLikely => 'Very likely';
+  @override String get ratingRequired => 'Please select a rating';
+  @override String get npsRequired => 'Please select a score';
 }
 
 // ─── Turkish ──────────────────────────────────────────────────────────────────
@@ -117,6 +121,8 @@ class TrFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => 'Ekran görüntüsünü kaldır';
   @override String get npsNotLikely => 'Pek olası değil';
   @override String get npsVeryLikely => 'Çok olası';
+  @override String get ratingRequired => 'Lütfen bir puan seçin';
+  @override String get npsRequired => 'Lütfen bir skor seçin';
 }
 
 // ─── German ───────────────────────────────────────────────────────────────────
@@ -151,6 +157,8 @@ class DeFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => 'Screenshot entfernen';
   @override String get npsNotLikely => 'Unwahrscheinlich';
   @override String get npsVeryLikely => 'Sehr wahrscheinlich';
+  @override String get ratingRequired => 'Bitte wählen Sie eine Bewertung';
+  @override String get npsRequired => 'Bitte wählen Sie eine Punktzahl';
 }
 
 // ─── French ───────────────────────────────────────────────────────────────────
@@ -185,6 +193,8 @@ class FrFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => 'Supprimer la capture';
   @override String get npsNotLikely => 'Peu probable';
   @override String get npsVeryLikely => 'Très probable';
+  @override String get ratingRequired => 'Veuillez sélectionner une note';
+  @override String get npsRequired => 'Veuillez sélectionner un score';
 }
 
 // ─── Spanish ──────────────────────────────────────────────────────────────────
@@ -219,6 +229,8 @@ class EsFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => 'Eliminar captura';
   @override String get npsNotLikely => 'Poco probable';
   @override String get npsVeryLikely => 'Muy probable';
+  @override String get ratingRequired => 'Por favor selecciona una calificación';
+  @override String get npsRequired => 'Por favor selecciona una puntuación';
 }
 
 // ─── Arabic ───────────────────────────────────────────────────────────────────
@@ -253,6 +265,8 @@ class ArFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => 'إزالة لقطة الشاشة';
   @override String get npsNotLikely => 'غير محتمل';
   @override String get npsVeryLikely => 'محتمل جداً';
+  @override String get ratingRequired => 'يرجى اختيار تقييم';
+  @override String get npsRequired => 'يرجى اختيار درجة';
 }
 
 // ─── Japanese ─────────────────────────────────────────────────────────────────
@@ -287,6 +301,8 @@ class JaFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => 'スクリーンショットを削除';
   @override String get npsNotLikely => '可能性が低い';
   @override String get npsVeryLikely => '非常に可能性が高い';
+  @override String get ratingRequired => '評価を選択してください';
+  @override String get npsRequired => 'スコアを選択してください';
 }
 
 // ─── Chinese (Simplified) ─────────────────────────────────────────────────────
@@ -318,6 +334,8 @@ class ZhFeedbackLocalizations extends FeedbackLocalizations {
   @override String get removeScreenshot => '删除截图';
   @override String get npsNotLikely => '不太可能';
   @override String get npsVeryLikely => '非常可能';
+  @override String get ratingRequired => '请选择评分';
+  @override String get npsRequired => '请选择分数';
 }
 
 // ─── Delegate ─────────────────────────────────────────────────────────────────
