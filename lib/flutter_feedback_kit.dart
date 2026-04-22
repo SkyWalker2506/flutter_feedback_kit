@@ -9,6 +9,7 @@ export 'src/domain/repositories/feedback_queue.dart';
 export 'src/domain/feedback_middleware.dart';
 export 'src/domain/middlewares/logging_middleware.dart';
 export 'src/domain/middlewares/ai_categorization_middleware.dart';
+export 'src/domain/middlewares/pii_sanitizer_middleware.dart';
 
 // Data
 export 'src/data/backends/webhook_backend.dart';
